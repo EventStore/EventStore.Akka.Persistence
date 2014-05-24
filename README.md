@@ -3,6 +3,7 @@
 [Akka Persistence](http://doc.akka.io/docs/akka/2.3.2/scala/persistence.html) journal backed by [EventStore](http://geteventstore.com/).
 
 To use this plugin prior default one, add the following to `application.conf`:
+
 ```akka.persistence.journal.plugin = eventstore.journal```
 
 To configure EventStore.JVM client, see it's [reference.conf](https://github.com/EventStore/EventStore.JVM/blob/master/src/main/resources/reference.conf)
