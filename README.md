@@ -1,6 +1,6 @@
 ## Event Store Journal for Akka Persistence [![Build Status](https://travis-ci.org/EventStore/EventStore.Akka.Persistence.png?branch=master)](https://travis-ci.org/EventStore/EventStore.Akka.Persistence)
 
-[Akka Persistence](http://doc.akka.io/docs/akka/2.3.2/scala/persistence.html) journal backed by [EventStore](http://geteventstore.com/).
+[Akka Persistence](http://doc.akka.io/docs/akka/2.3.2/scala/persistence.html) journal backed by [Event Store](http://geteventstore.com/).
 
 To use this plugin prior default one, add the following to `application.conf`:
 
