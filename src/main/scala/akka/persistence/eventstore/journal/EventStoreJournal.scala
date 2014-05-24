@@ -108,7 +108,7 @@ class EventStoreJournal extends AsyncWriteJournal {
     if (x == Long.MaxValue) Int.MaxValue
     else {
       if (x.isValidInt) x.toInt
-      else throw new RuntimeException(s"Can't convert $x to Int")
+      else sys.error(s"Can't convert $x to Int")
     }
   }
 
