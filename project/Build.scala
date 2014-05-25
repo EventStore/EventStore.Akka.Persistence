@@ -11,7 +11,7 @@ object Build extends Build {
     licenses             := Seq("BSD 3-Clause" -> url("http://raw.github.com/EventStore/EventStore.Akka.Persistence/master/LICENSE")),
     homepage             := Some(new URL("http://github.com/EventStore/EventStore.Akka.Persistence")),
     organizationHomepage := Some(new URL("http://geteventstore.com")),
-    description          := "Event Store JVM Client",
+    description          := "Event Store Journal for Akka Persistence",
     startYear            := Some(2013),
     scalacOptions        := Seq("-encoding", "UTF-8", "-unchecked", "-deprecation", "-feature"),
     resolvers            += "krasserm at bintray" at "http://dl.bintray.com/krasserm/maven",
