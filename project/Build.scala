@@ -1,7 +1,6 @@
 import sbt._
 import Keys._
 import sbtrelease.ReleasePlugin._
-import sbtprotobuf.ProtobufPlugin.protobufSettings
 
 object Build extends Build {
   lazy val basicSettings = Seq(
@@ -38,7 +37,7 @@ object Build extends Build {
   lazy val root = Project(
     "root",
     file("."),
-    settings = basicSettings ++ Defaults.defaultSettings ++ releaseSettings ++ protobufSettings ++ Scalariform.settings ++ Publish.settings)
+    settings = basicSettings ++ Defaults.defaultSettings ++ releaseSettings ++ Scalariform.settings ++ Publish.settings)
     .configs(IntegrationTest)
     .settings(inConfig(IntegrationTest)(Defaults.testTasks): _*)
     .settings(
