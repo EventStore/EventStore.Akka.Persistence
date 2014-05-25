@@ -35,7 +35,7 @@ object Build extends Build {
   lazy val IntegrationTest = config("integration") extend Test
 
   lazy val root = Project(
-    "root",
+    "akka-persistence-eventstore",
     file("."),
     settings = basicSettings ++ Defaults.defaultSettings ++ releaseSettings ++ Scalariform.settings ++ Publish.settings)
     .configs(IntegrationTest)
