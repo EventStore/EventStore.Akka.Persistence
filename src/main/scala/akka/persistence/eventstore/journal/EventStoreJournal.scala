@@ -1,23 +1,20 @@
 package akka.persistence.eventstore.journal
 
+import akka.actor.ActorLogging
 import akka.persistence.journal.AsyncWriteJournal
 import akka.persistence.{ PersistentConfirmation, PersistentId, PersistentRepr }
 import akka.persistence.eventstore.Helpers._
-import akka.actor.ActorLogging
-import akka.serialization.{ Serialization, SerializationExtension }
+import akka.persistence.eventstore.EventStorePlugin
 import scala.collection.immutable.Seq
 import scala.concurrent.Future
 import eventstore._
 
-class EventStoreJournal extends AsyncWriteJournal with ActorLogging {
+class EventStoreJournal extends AsyncWriteJournal with ActorLogging with EventStorePlugin {
   import EventStoreJournal._
   import EventStoreJournal.Update._
   import context.dispatcher
 
-  val connection: EsConnection = EsConnection(context.system)
-  val serialization: Serialization = SerializationExtension(context.system)
-
-  def asyncWriteMessages(messages: Seq[PersistentRepr]) = futureSeq {
+  def asyncWriteMessages(messages: Seq[PersistentRepr]) = async {
     messages.groupBy(_.processorId).map {
       case (processorId, msgs) =>
         val ds = msgs.map(toEventData)
@@ -30,7 +27,7 @@ class EventStoreJournal extends AsyncWriteJournal with ActorLogging {
     }
   }
 
-  def asyncWriteConfirmations(cs: Seq[PersistentConfirmation]) = futureSeq {
+  def asyncWriteConfirmations(cs: Seq[PersistentConfirmation]) = async {
     cs.groupBy(_.processorId).map {
       case (processorId, cs) =>
         val map = cs.groupBy(_.sequenceNr).map {
@@ -40,7 +37,7 @@ class EventStoreJournal extends AsyncWriteJournal with ActorLogging {
     }
   }
 
-  def asyncDeleteMessages(messageIds: Seq[PersistentId], permanent: Boolean) = futureSeq {
+  def asyncDeleteMessages(messageIds: Seq[PersistentId], permanent: Boolean) = async {
     messageIds.groupBy(_.processorId).map {
       case (processorId, ids) => addUpdate(processorId, Delete(ids.map(_.sequenceNr).toList, permanent))
     }
@@ -89,20 +86,20 @@ class EventStoreJournal extends AsyncWriteJournal with ActorLogging {
 
   def toEventData(x: PersistentRepr): EventData = EventData(
     eventType = x.payload.getClass.getSimpleName,
-    data = Content(serialization.serialize(x).get))
+    data = serialize(x))
 
   def fromEventData(x: EventData): PersistentRepr =
-    serialization.deserialize(x.data.value.toArray, classOf[PersistentRepr]).get
+    deserialize[PersistentRepr](x.data, classOf[PersistentRepr])
 
   def updates(processorId: String): Future[Updates] = {
     def fold(updates: Updates, event: Event): Updates = {
       val eventType = event.data.eventType
-      clazz.get(eventType) match {
+      classMap.get(eventType) match {
         case None =>
           log.warning("Can't find class for eventType {}", eventType)
           updates
 
-        case Some(c) => serialization.deserialize(event.data.data.value.toArray, c).get /*TODO*/ match {
+        case Some(c) => deserialize(event.data.data, c) /*TODO*/ match {
           case Confirm(m1) =>
             val m2 = updates.confirms
             val confirms = m1 ++ m2.map { case (k, v) => k -> (v ++ m1.getOrElse(k, Nil)) }
@@ -127,12 +124,12 @@ class EventStoreJournal extends AsyncWriteJournal with ActorLogging {
 
   def addUpdate(processorId: String, x: Update): Future[Unit] = {
     val streamId = Update.eventStream(processorId)
-    val eventType = Update.eventType(x.getClass)
-    val req = WriteEvents(streamId, List(EventData(eventType, data = Content(serialization.serialize(x).get))))
+    val eventType = Update.eventTypeMap(x.getClass)
+    val req = WriteEvents(streamId, List(EventData(eventType, data = serialize(x))))
     connection.future(req).map(_ => Unit)
   }
 
-  def futureSeq[A](in: Iterable[Future[A]]): Future[Unit] = {
+  def async[A](in: => Iterable[Future[A]]): Future[Unit] = {
     Future.sequence(in).map(_ => Unit)
   }
 }
@@ -143,12 +140,12 @@ object EventStoreJournal {
   object Update {
     def eventStream(x: String): EventStream.Id = EventStream(normalize(x) + "-updates")
 
-    val clazz: Map[String, Class[_ <: Update]] = Map(
+    val classMap: Map[String, Class[_ <: Update]] = Map(
       "confirm" -> classOf[Confirm],
       "delete" -> classOf[Delete],
       "deleteTo" -> classOf[DeleteTo])
 
-    val eventType: Map[Class[_ <: Update], String] = clazz.map(_.swap)
+    val eventTypeMap: Map[Class[_ <: Update], String] = classMap.map(_.swap)
 
     @SerialVersionUID(0)
     case class Confirm(confirms: Confirms) extends Update

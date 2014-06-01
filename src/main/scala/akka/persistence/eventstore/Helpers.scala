@@ -7,6 +7,7 @@ import eventstore._
 import eventstore.ReadStreamEventsCompleted
 
 object Helpers {
+  type Timestamp = Long
   type ProcessorId = String
   type SequenceNr = Long
   type ChannelId = String
@@ -58,14 +59,14 @@ object Helpers {
         case x :: xs => pf.lift(t, x).fold(Future.successful(t))(loop(xs, _, quit))
       }
 
-      def foldWhile(from: EventNumber, t: T): Future[T] = {
+      def foldLeft(from: EventNumber, t: T): Future[T] = {
         readBatch(req.copy(fromNumber = from)).flatMap {
           case Last(events)          => loop(events, t, Future.successful)
-          case NotLast(events, from) => loop(events, t, foldWhile(from, _))
+          case NotLast(events, from) => loop(events, t, foldLeft(from, _))
         }
       }
 
-      foldWhile(req.fromNumber, default)
+      foldLeft(req.fromNumber, default)
     }
 
     def readBatch(req: ReadStreamEvents)(implicit ex: ExecutionContext): Future[Batch] = {
