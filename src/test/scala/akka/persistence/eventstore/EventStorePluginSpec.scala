@@ -1,10 +1,10 @@
-package akka.persistence.eventstore.journal
+package akka.persistence.eventstore
 
-import akka.persistence.journal.JournalSpec
+import akka.persistence.PluginSpec
 import com.typesafe.config.ConfigFactory
 import java.util.UUID
 
-class EventStoreIntegrationSpec extends JournalSpec {
+trait EventStorePluginSpec extends PluginSpec {
   lazy val config = ConfigFactory.load()
 
   private var _pid: String = _

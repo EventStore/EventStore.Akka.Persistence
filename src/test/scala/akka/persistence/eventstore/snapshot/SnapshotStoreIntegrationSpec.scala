@@ -1,0 +1,7 @@
+package akka.persistence.eventstore.snapshot
+
+import akka.persistence.snapshot.SnapshotStoreSpec
+import akka.persistence.eventstore.EventStorePluginSpec
+
+class SnapshotStoreIntegrationSpec extends SnapshotStoreSpec with EventStorePluginSpec
+

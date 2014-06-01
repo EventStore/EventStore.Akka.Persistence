@@ -2,20 +2,20 @@ package akka.persistence.eventstore.journal
 
 import akka.persistence.journal.AsyncWriteJournal
 import akka.persistence.{ PersistentConfirmation, PersistentId, PersistentRepr }
+import akka.persistence.eventstore.Helpers._
+import akka.actor.ActorLogging
 import akka.serialization.{ Serialization, SerializationExtension }
-import scala.PartialFunction.cond
 import scala.collection.immutable.Seq
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.Future
 import eventstore._
-import eventstore.ReadDirection.Forward
 
-class EventStoreJournal extends AsyncWriteJournal {
+class EventStoreJournal extends AsyncWriteJournal with ActorLogging {
   import EventStoreJournal._
   import EventStoreJournal.Update._
   import context.dispatcher
 
-  protected val connection: EsConnection = EsConnection(context.system)
-  private val serialization: Serialization = SerializationExtension(context.system)
+  val connection: EsConnection = EsConnection(context.system)
+  val serialization: Serialization = SerializationExtension(context.system)
 
   def asyncWriteMessages(messages: Seq[PersistentRepr]) = futureSeq {
     messages.groupBy(_.processorId).map {
@@ -46,7 +46,7 @@ class EventStoreJournal extends AsyncWriteJournal {
     }
   }
 
-  def asyncDeleteMessagesTo(processorId: String, to: SequenceNr, permanent: Boolean) = {
+  def asyncDeleteMessagesTo(processorId: ProcessorId, to: SequenceNr, permanent: Boolean) = {
     addUpdate(processorId, DeleteTo(to, permanent))
   }
 
@@ -59,16 +59,16 @@ class EventStoreJournal extends AsyncWriteJournal {
     }
   }
 
-  def asyncReplayMessages(processorId: String, from: SequenceNr, to: SequenceNr, max: Long)(replayCallback: (PersistentRepr) => Unit) = {
+  def asyncReplayMessages(processorId: ProcessorId, from: SequenceNr, to: SequenceNr, max: Long)(replayCallback: (PersistentRepr) => Unit) = {
     def asyncReplayMessages(from: EventNumber.Exact, to: EventNumber.Exact, max: Int): Future[Unit] = {
       updates(processorId).flatMap {
         case Updates(confirms, d, p, dt, pt) =>
           def deleted(x: SequenceNr): Boolean = x <= dt || (d contains x)
           def deletedPermanently(x: SequenceNr): Boolean = x <= pt || (p contains x)
 
-          connection.readWhile(eventStream(processorId), max, from) { (left, event) =>
-            if (event.number > to || left <= 0) None
-            else {
+          val req = ReadStreamEvents(eventStream(processorId), from)
+          connection.foldLeft(req, max) {
+            case (left, event) if event.number <= to && left > 0 =>
               val seqNr = sequenceNumber(event.number)
 
               if (!deletedPermanently(seqNr)) {
@@ -78,24 +78,14 @@ class EventStoreJournal extends AsyncWriteJournal {
                 replayCallback(repr)
               }
 
-              left - 1 match {
-                case 0 => None
-                case x => Some(x)
-              }
-            }
+              left - 1
           }.map(_ => Unit)
       }
     }
-    asyncReplayMessages(eventNumber(from), eventNumber(to), asInt(max))
+    asyncReplayMessages(eventNumber(from), eventNumber(to), max.toIntOrError)
   }
 
-  def eventStream(processorId: String): EventStream.Id = {
-    EventStream(processorId.split('/').filter(_.nonEmpty).mkString("-"))
-  }
-
-  private def eventNumber(x: SequenceNr): EventNumber.Exact = EventNumber(asInt(x) - 1)
-
-  private def sequenceNumber(x: EventNumber.Exact): SequenceNr = x.value.toLong + 1
+  def eventStream(processorId: String): EventStream.Id = EventStream(normalize(processorId))
 
   def toEventData(x: PersistentRepr): EventData = EventData(
     eventType = x.payload.getClass.getSimpleName,
@@ -104,33 +94,34 @@ class EventStoreJournal extends AsyncWriteJournal {
   def fromEventData(x: EventData): PersistentRepr =
     serialization.deserialize(x.data.value.toArray, classOf[PersistentRepr]).get
 
-  def asInt(x: Long): Int = {
-    if (x == Long.MaxValue) Int.MaxValue
-    else {
-      if (x.isValidInt) x.toInt
-      else sys.error(s"Can't convert $x to Int")
-    }
-  }
-
   def updates(processorId: String): Future[Updates] = {
-    connection.readWhile(Update.eventStream(processorId), Updates.Empty) {
-      (metadata, event) =>
-        Some(clazz.get(event.data.eventType).fold(metadata) { clazz =>
-          serialization.deserialize(event.data.data.value.toArray, clazz).get match {
-            case Confirm(m1) =>
-              val m2 = metadata.confirms
-              val confirms = m1 ++ m2.map { case (k, v) => k -> (v ++ m1.getOrElse(k, Nil)) }
-              metadata.copy(confirms = confirms)
+    def fold(updates: Updates, event: Event): Updates = {
+      val eventType = event.data.eventType
+      clazz.get(eventType) match {
+        case None =>
+          log.warning("Can't find class for eventType {}", eventType)
+          updates
 
-            case Delete(sequenceNrs, permanent) =>
-              if (!permanent) metadata.copy(deleted = metadata.deleted ++ sequenceNrs)
-              else metadata.copy(deletedPermanently = metadata.deletedPermanently ++ sequenceNrs)
+        case Some(c) => serialization.deserialize(event.data.data.value.toArray, c).get /*TODO*/ match {
+          case Confirm(m1) =>
+            val m2 = updates.confirms
+            val confirms = m1 ++ m2.map { case (k, v) => k -> (v ++ m1.getOrElse(k, Nil)) }
+            updates.copy(confirms = confirms)
 
-            case DeleteTo(toSequenceNr, permanent) =>
-              if (!permanent) metadata.copy(deletedTo = math.max(toSequenceNr, metadata.deletedTo))
-              else metadata.copy(deletedPermanentlyTo = math.max(toSequenceNr, metadata.deletedPermanentlyTo))
-          }
-        })
+          case Delete(sequenceNrs, permanent) =>
+            if (!permanent) updates.copy(deleted = updates.deleted ++ sequenceNrs)
+            else updates.copy(deletedPermanently = updates.deletedPermanently ++ sequenceNrs)
+
+          case DeleteTo(toSequenceNr, permanent) =>
+            if (!permanent) updates.copy(deletedTo = math.max(toSequenceNr, updates.deletedTo))
+            else updates.copy(deletedPermanentlyTo = math.max(toSequenceNr, updates.deletedPermanentlyTo))
+        }
+      }
+    }
+
+    val req = ReadStreamEvents(Update.eventStream(processorId))
+    connection.foldLeft(req, Updates.Empty) {
+      case (updates, event) => fold(updates, event)
     }
   }
 
@@ -147,40 +138,10 @@ class EventStoreJournal extends AsyncWriteJournal {
 }
 
 object EventStoreJournal {
-  type SequenceNr = Long
-  type ChannelId = String
-  type Confirms = Map[SequenceNr, Seq[ChannelId]]
-
-  case class Updates(
-    confirms: Confirms,
-    deleted: Set[SequenceNr],
-    deletedPermanently: Set[SequenceNr],
-    deletedTo: SequenceNr,
-    deletedPermanentlyTo: SequenceNr)
-
-  object Updates {
-    val Empty: Updates = Updates(Map.empty, Set.empty, Set.empty, -1L, -1L)
-  }
-
-  sealed trait Batch {
-    def events: List[Event]
-  }
-
-  object Batch {
-    val Empty: Batch = Last(Nil)
-
-    def apply(x: ReadStreamEventsCompleted): Batch =
-      if (x.endOfStream) Last(x.events)
-      else NotLast(x.events, x.nextEventNumber)
-
-    case class Last(events: List[Event]) extends Batch
-    case class NotLast(events: List[Event], next: EventNumber) extends Batch
-  }
-
   sealed trait Update
 
   object Update {
-    def eventStream(x: String): EventStream.Id = EventStream(s"$x-updates")
+    def eventStream(x: String): EventStream.Id = EventStream(normalize(x) + "-updates")
 
     val clazz: Map[String, Class[_ <: Update]] = Map(
       "confirm" -> classOf[Confirm],
@@ -199,33 +160,14 @@ object EventStoreJournal {
     case class DeleteTo(toSequenceNr: SequenceNr, permanent: Boolean) extends Update
   }
 
-  object StreamNotFound {
-    def unapply(x: Throwable): Boolean = cond(x) {
-      case EsException(EsError.StreamNotFound, _) => true
-    }
-  }
+  case class Updates(
+    confirms: Confirms,
+    deleted: Set[SequenceNr],
+    deletedPermanently: Set[SequenceNr],
+    deletedTo: SequenceNr,
+    deletedPermanentlyTo: SequenceNr)
 
-  implicit class RichConnection(val self: EsConnection) extends AnyVal {
-    def readWhile[T](streamId: EventStream.Id, default: T, from: EventNumber = EventNumber.First, direction: ReadDirection = Forward)(process: (T, Event) => Option[T])(implicit ex: ExecutionContext): Future[T] = {
-      import Batch._
-
-      def loop(events: List[Event], t: T, quit: T => Future[T]): Future[T] = events match {
-        case Nil     => quit(t)
-        case x :: xs => process(t, x).fold(Future.successful(t))(loop(xs, _, quit))
-      }
-
-      def readWhile(from: EventNumber, t: T): Future[T] = readBatch(ReadStreamEvents(streamId, from)).flatMap {
-        case Last(events)          => loop(events, t, Future.successful)
-        case NotLast(events, from) => loop(events, t, readWhile(from, _))
-      }
-
-      readWhile(from, default)
-    }
-
-    def readBatch(req: ReadStreamEvents)(implicit ex: ExecutionContext): Future[Batch] = {
-      self.future(req).map(Batch(_)).recover {
-        case StreamNotFound() => Batch.Empty
-      }
-    }
+  object Updates {
+    val Empty: Updates = Updates(Map.empty, Set.empty, Set.empty, -1L, -1L)
   }
 }

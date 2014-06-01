@@ -1,0 +1,6 @@
+package akka.persistence.eventstore.journal
+
+import akka.persistence.journal.JournalSpec
+import akka.persistence.eventstore.EventStorePluginSpec
+
+class JournalIntegrationSpec extends JournalSpec with EventStorePluginSpec
