@@ -1,6 +1,5 @@
 package akka.persistence.eventstore.journal
 
-import akka.actor.ActorLogging
 import akka.persistence.journal.AsyncWriteJournal
 import akka.persistence.{ PersistentConfirmation, PersistentId, PersistentRepr }
 import akka.persistence.eventstore.Helpers._
@@ -9,12 +8,12 @@ import scala.collection.immutable.Seq
 import scala.concurrent.Future
 import eventstore._
 
-class EventStoreJournal extends AsyncWriteJournal with ActorLogging with EventStorePlugin {
+class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
   import EventStoreJournal._
   import EventStoreJournal.Update._
   import context.dispatcher
 
-  def asyncWriteMessages(messages: Seq[PersistentRepr]) = async {
+  def asyncWriteMessages(messages: Seq[PersistentRepr]) = asyncSeq {
     messages.groupBy(_.processorId).map {
       case (processorId, msgs) =>
         val ds = msgs.map(toEventData)
@@ -27,7 +26,7 @@ class EventStoreJournal extends AsyncWriteJournal with ActorLogging with EventSt
     }
   }
 
-  def asyncWriteConfirmations(cs: Seq[PersistentConfirmation]) = async {
+  def asyncWriteConfirmations(cs: Seq[PersistentConfirmation]) = asyncSeq {
     cs.groupBy(_.processorId).map {
       case (processorId, cs) =>
         val map = cs.groupBy(_.sequenceNr).map {
@@ -37,17 +36,17 @@ class EventStoreJournal extends AsyncWriteJournal with ActorLogging with EventSt
     }
   }
 
-  def asyncDeleteMessages(messageIds: Seq[PersistentId], permanent: Boolean) = async {
+  def asyncDeleteMessages(messageIds: Seq[PersistentId], permanent: Boolean) = asyncSeq {
     messageIds.groupBy(_.processorId).map {
       case (processorId, ids) => addUpdate(processorId, Delete(ids.map(_.sequenceNr).toList, permanent))
     }
   }
 
-  def asyncDeleteMessagesTo(processorId: ProcessorId, to: SequenceNr, permanent: Boolean) = {
+  def asyncDeleteMessagesTo(processorId: ProcessorId, to: SequenceNr, permanent: Boolean) = asyncUnit {
     addUpdate(processorId, DeleteTo(to, permanent))
   }
 
-  def asyncReadHighestSequenceNr(processorId: String, from: SequenceNr) = {
+  def asyncReadHighestSequenceNr(processorId: String, from: SequenceNr) = async {
     val req = ReadEvent(eventStream(processorId), EventNumber.Last)
     connection.future(req).map {
       case ReadEventCompleted(event) => sequenceNumber(event.number)
@@ -56,8 +55,8 @@ class EventStoreJournal extends AsyncWriteJournal with ActorLogging with EventSt
     }
   }
 
-  def asyncReplayMessages(processorId: ProcessorId, from: SequenceNr, to: SequenceNr, max: Long)(replayCallback: (PersistentRepr) => Unit) = {
-    def asyncReplayMessages(from: EventNumber.Exact, to: EventNumber.Exact, max: Int): Future[Unit] = {
+  def asyncReplayMessages(processorId: ProcessorId, from: SequenceNr, to: SequenceNr, max: Long)(replayCallback: (PersistentRepr) => Unit) = asyncUnit {
+    def asyncReplayMessages(from: EventNumber.Exact, to: EventNumber.Exact, max: Int) = {
       updates(processorId).flatMap {
         case Updates(confirms, d, p, dt, pt) =>
           def deleted(x: SequenceNr): Boolean = x <= dt || (d contains x)
@@ -76,7 +75,7 @@ class EventStoreJournal extends AsyncWriteJournal with ActorLogging with EventSt
               }
 
               left - 1
-          }.map(_ => Unit)
+          }
       }
     }
     asyncReplayMessages(eventNumber(from), eventNumber(to), max.toIntOrError)
@@ -96,10 +95,10 @@ class EventStoreJournal extends AsyncWriteJournal with ActorLogging with EventSt
       val eventType = event.data.eventType
       classMap.get(eventType) match {
         case None =>
-          log.warning("Can't find class for eventType {}", eventType)
+          logNoClassFoundFor(eventType)
           updates
 
-        case Some(c) => deserialize(event.data.data, c) /*TODO*/ match {
+        case Some(c) => deserialize(event.data.data, c) match {
           case Confirm(m1) =>
             val m2 = updates.confirms
             val confirms = m1 ++ m2.map { case (k, v) => k -> (v ++ m1.getOrElse(k, Nil)) }
@@ -122,15 +121,11 @@ class EventStoreJournal extends AsyncWriteJournal with ActorLogging with EventSt
     }
   }
 
-  def addUpdate(processorId: String, x: Update): Future[Unit] = {
+  def addUpdate(processorId: String, x: Update) = {
     val streamId = Update.eventStream(processorId)
     val eventType = Update.eventTypeMap(x.getClass)
     val req = WriteEvents(streamId, List(EventData(eventType, data = serialize(x))))
-    connection.future(req).map(_ => Unit)
-  }
-
-  def async[A](in: => Iterable[Future[A]]): Future[Unit] = {
-    Future.sequence(in).map(_ => Unit)
+    connection.future(req)
   }
 }
 

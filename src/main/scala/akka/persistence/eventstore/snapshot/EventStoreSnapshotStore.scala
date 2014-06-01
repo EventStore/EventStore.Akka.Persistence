@@ -1,6 +1,5 @@
 package akka.persistence.eventstore.snapshot
 
-import akka.actor.ActorLogging
 import akka.persistence.snapshot.SnapshotStore
 import akka.persistence.{ SelectedSnapshot, SnapshotMetadata, SnapshotSelectionCriteria }
 import akka.persistence.eventstore.Helpers._
@@ -11,7 +10,7 @@ import scala.concurrent.duration._
 import eventstore._
 import eventstore.ReadDirection.Backward
 
-class EventStoreSnapshotStore extends SnapshotStore with ActorLogging with EventStorePlugin {
+class EventStoreSnapshotStore extends SnapshotStore with EventStorePlugin {
   import EventStoreSnapshotStore._
   import EventStoreSnapshotStore.SnapshotEvent._
   import context.dispatcher
@@ -19,11 +18,16 @@ class EventStoreSnapshotStore extends SnapshotStore with ActorLogging with Event
   val config = context.system.settings.config.getConfig("eventstore.snapshot-store")
   val deleteAwait = config.getDuration("delete-await", TimeUnit.MILLISECONDS).millis
 
-  def loadAsync(processorId: String, criteria: SnapshotSelectionCriteria) = {
+  def loadAsync(processorId: String, criteria: SnapshotSelectionCriteria) = async {
     import Selection._
     def fold(deletes: Deletes, event: Event): Selection = {
-      classMap(event.data.eventType) match {
-        case SnapshotClass =>
+      val eventType = event.data.eventType
+      classMap.get(eventType) match {
+        case None =>
+          logNoClassFoundFor(eventType)
+          deletes
+
+        case Some(SnapshotClass) =>
           val metadata = deserialize(event.data.metadata, classOf[SnapshotMetadata])
 
           val seqNr = metadata.sequenceNr
@@ -41,13 +45,13 @@ class EventStoreSnapshotStore extends SnapshotStore with ActorLogging with Event
             Selected(SelectedSnapshot(metadata, snapshot.data))
           }
 
-        case clazz =>
-          deserialize(event.data.data, clazz) match {
-            case Delete(seqNr, _) => deletes.copy(deleted = deletes.deleted + seqNr)
-            case DeleteCriteria(maxSeqNr, maxTimestamp) => deletes.copy(
-              minSequenceNr = math.max(deletes.minSequenceNr, maxSeqNr),
-              minTimestamp = math.max(deletes.minTimestamp, maxTimestamp))
-          }
+        case Some(clazz) => deserialize(event.data.data, clazz) match {
+          case Snapshot(_)      => deletes
+          case Delete(seqNr, _) => deletes.copy(deleted = deletes.deleted + seqNr)
+          case DeleteCriteria(maxSeqNr, maxTimestamp) => deletes.copy(
+            minSequenceNr = math.max(deletes.minSequenceNr, maxSeqNr),
+            minTimestamp = math.max(deletes.minTimestamp, maxTimestamp))
+        }
       }
     }
 
@@ -57,13 +61,13 @@ class EventStoreSnapshotStore extends SnapshotStore with ActorLogging with Event
     }.map(_.selected)
   }
 
-  def saveAsync(metadata: SnapshotMetadata, snapshot: Any) = {
+  def saveAsync(metadata: SnapshotMetadata, snapshot: Any) = asyncUnit {
     val streamId = eventStream(metadata.processorId)
     val event = EventData(
       eventType = eventTypeMap(classOf[Snapshot]),
       data = serialize(Snapshot(snapshot)),
       metadata = serialize(metadata))
-    connection.future(WriteEvents(streamId, List(event))).map(_ => Unit)
+    connection.future(WriteEvents(streamId, List(event)))
   }
 
   def saved(metadata: SnapshotMetadata) = {}
@@ -83,7 +87,7 @@ class EventStoreSnapshotStore extends SnapshotStore with ActorLogging with Event
   def write(processorId: String, sn: SnapshotEvent): Unit = {
     val streamId = eventStream(processorId)
     val event = EventData(
-      eventType = eventTypeMap(sn.getClass) /*TODO*/ ,
+      eventType = eventTypeMap(sn.getClass),
       data = serialize(sn))
     val future = connection.future(WriteEvents(streamId, List(event)))
     Await.result(future, deleteAwait)
