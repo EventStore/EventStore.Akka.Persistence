@@ -7,6 +7,7 @@ import akka.persistence.eventstore.EventStorePlugin
 import java.util.concurrent.TimeUnit
 import scala.concurrent.Await
 import scala.concurrent.duration._
+import com.typesafe.config.Config
 import eventstore._
 import eventstore.ReadDirection.Backward
 
@@ -15,8 +16,9 @@ class EventStoreSnapshotStore extends SnapshotStore with EventStorePlugin {
   import EventStoreSnapshotStore.SnapshotEvent._
   import context.dispatcher
 
-  val config = context.system.settings.config.getConfig("eventstore.snapshot-store")
-  val deleteAwait = config.getDuration("delete-await", TimeUnit.MILLISECONDS).millis
+  val config: Config = context.system.settings.config.getConfig("eventstore.snapshot-store")
+  val deleteAwait: FiniteDuration = config.getDuration("delete-await", TimeUnit.MILLISECONDS).millis
+  val readBatchSize: Int = config.getInt("read-batch-size")
 
   def loadAsync(processorId: String, criteria: SnapshotSelectionCriteria) = async {
     import Selection._
@@ -46,7 +48,7 @@ class EventStoreSnapshotStore extends SnapshotStore with EventStorePlugin {
           }
 
         case Some(clazz) => deserialize(event.data.data, clazz) match {
-          case Snapshot(_)      => deletes
+          case Snapshot(_)      => deletes // should not happen
           case Delete(seqNr, _) => deletes.copy(deleted = deletes.deleted + seqNr)
           case DeleteCriteria(maxSeqNr, maxTimestamp) => deletes.copy(
             minSequenceNr = math.max(deletes.minSequenceNr, maxSeqNr),
@@ -55,7 +57,8 @@ class EventStoreSnapshotStore extends SnapshotStore with EventStorePlugin {
       }
     }
 
-    val req = ReadStreamEvents(eventStream(processorId), EventNumber.Last, maxCount = 10, direction = Backward)
+    val streamId = eventStream(processorId)
+    val req = ReadStreamEvents(streamId, EventNumber.Last, maxCount = readBatchSize, direction = Backward)
     connection.foldLeft(req, Empty) {
       case (deletes: Deletes, event) => fold(deletes, event)
     }.map(_.selected)
@@ -63,33 +66,35 @@ class EventStoreSnapshotStore extends SnapshotStore with EventStorePlugin {
 
   def saveAsync(metadata: SnapshotMetadata, snapshot: Any) = asyncUnit {
     val streamId = eventStream(metadata.processorId)
-    val event = EventData(
-      eventType = eventTypeMap(classOf[Snapshot]),
-      data = serialize(Snapshot(snapshot)),
-      metadata = serialize(metadata))
-    connection.future(WriteEvents(streamId, List(event)))
+    connection.future(WriteEvents(streamId, List(eventData(metadata, snapshot))))
   }
 
   def saved(metadata: SnapshotMetadata) = {}
 
   def delete(metadata: SnapshotMetadata) = {
-    write(metadata.processorId, Delete(metadata.sequenceNr, timestamp = metadata.timestamp))
+    delete(metadata.processorId, Delete(metadata.sequenceNr, timestamp = metadata.timestamp))
   }
 
   def delete(processorId: String, criteria: SnapshotSelectionCriteria) = {
-    write(processorId, SnapshotEvent.DeleteCriteria(
+    delete(processorId, SnapshotEvent.DeleteCriteria(
       maxSequenceNr = criteria.maxSequenceNr,
       maxTimestamp = criteria.maxTimestamp))
   }
 
+  def eventData(metadata: SnapshotMetadata, snapshot: Any): EventData = EventData(
+    eventType = eventTypeMap(SnapshotClass),
+    data = serialize(Snapshot(snapshot)),
+    metadata = serialize(metadata))
+
+  def eventData(x: SnapshotEvent): EventData = EventData(
+    eventType = eventTypeMap(x.getClass),
+    data = serialize(x))
+
   def eventStream(x: ProcessorId): EventStream.Id = EventStream(normalize(x) + "-snapshots")
 
-  def write(processorId: String, sn: SnapshotEvent): Unit = {
+  def delete(processorId: String, se: DeleteEvent): Unit = {
     val streamId = eventStream(processorId)
-    val event = EventData(
-      eventType = eventTypeMap(sn.getClass),
-      data = serialize(sn))
-    val future = connection.future(WriteEvents(streamId, List(event)))
+    val future = connection.future(WriteEvents(streamId, List(eventData(se))))
     Await.result(future, deleteAwait)
   }
 }
@@ -109,11 +114,13 @@ object EventStoreSnapshotStore {
     @SerialVersionUID(0)
     case class Snapshot(data: Any) extends SnapshotEvent
 
-    @SerialVersionUID(0)
-    case class Delete(sequenceNr: SequenceNr, timestamp: Timestamp) extends SnapshotEvent
+    sealed trait DeleteEvent extends SnapshotEvent
 
     @SerialVersionUID(0)
-    case class DeleteCriteria(maxSequenceNr: SequenceNr, maxTimestamp: Timestamp) extends SnapshotEvent
+    case class Delete(sequenceNr: SequenceNr, timestamp: Timestamp) extends DeleteEvent
+
+    @SerialVersionUID(0)
+    case class DeleteCriteria(maxSequenceNr: SequenceNr, maxTimestamp: Timestamp) extends DeleteEvent
   }
 
   sealed trait Selection {

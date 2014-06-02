@@ -16,12 +16,12 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
   def asyncWriteMessages(messages: Seq[PersistentRepr]) = asyncSeq {
     messages.groupBy(_.processorId).map {
       case (processorId, msgs) =>
-        val ds = msgs.map(toEventData)
+        val events = msgs.map(eventData)
         val expVer = msgs.head.sequenceNr - 1 match {
           case 0L => ExpectedVersion.NoStream
           case x  => ExpectedVersion(eventNumber(x))
         }
-        val req = WriteEvents(eventStream(processorId), ds.toList, expVer)
+        val req = WriteEvents(eventStream(processorId), events.toList, expVer)
         connection.future(req)
     }
   }
@@ -68,7 +68,7 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
               val seqNr = sequenceNumber(event.number)
 
               if (!deletedPermanently(seqNr)) {
-                val repr = fromEventData(event.data).update(
+                val repr = persistentRepr(event.data).update(
                   deleted = deleted(seqNr),
                   confirms = confirms.getOrElse(seqNr, Seq.empty))
                 replayCallback(repr)
@@ -83,11 +83,13 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
 
   def eventStream(processorId: String): EventStream.Id = EventStream(normalize(processorId))
 
-  def toEventData(x: PersistentRepr): EventData = EventData(
+  def eventData(x: PersistentRepr): EventData = EventData(
     eventType = x.payload.getClass.getSimpleName,
     data = serialize(x))
 
-  def fromEventData(x: EventData): PersistentRepr =
+  def eventData(x: Update): EventData = EventData(eventTypeMap(x.getClass), data = serialize(x))
+
+  def persistentRepr(x: EventData): PersistentRepr =
     deserialize[PersistentRepr](x.data, classOf[PersistentRepr])
 
   def updates(processorId: String): Future[Updates] = {
@@ -121,10 +123,9 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
     }
   }
 
-  def addUpdate(processorId: String, x: Update) = {
+  def addUpdate(processorId: String, update: Update) = {
     val streamId = Update.eventStream(processorId)
-    val eventType = Update.eventTypeMap(x.getClass)
-    val req = WriteEvents(streamId, List(EventData(eventType, data = serialize(x))))
+    val req = WriteEvents(streamId, List(eventData(update)))
     connection.future(req)
   }
 }
