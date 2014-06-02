@@ -54,6 +54,12 @@ object Helpers {
 
       import Batch._
 
+      def readBatch(req: ReadStreamEvents): Future[Batch] = {
+        self.future(req).map(Batch(_)).recover {
+          case StreamNotFound() => Batch.Empty
+        }
+      }
+
       def loop(events: List[Event], t: T, quit: T => Future[T]): Future[T] = events match {
         case Nil     => quit(t)
         case x :: xs => pf.lift(t, x).fold(Future.successful(t))(loop(xs, _, quit))
@@ -67,12 +73,6 @@ object Helpers {
       }
 
       foldLeft(req.fromNumber, default)
-    }
-
-    def readBatch(req: ReadStreamEvents)(implicit ex: ExecutionContext): Future[Batch] = {
-      self.future(req).map(Batch(_)).recover {
-        case StreamNotFound() => Batch.Empty
-      }
     }
   }
 }
