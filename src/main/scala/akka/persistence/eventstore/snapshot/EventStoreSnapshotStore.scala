@@ -24,7 +24,7 @@ class EventStoreSnapshotStore extends SnapshotStore with EventStorePlugin {
     import Selection._
     def fold(deletes: Deletes, event: Event): Selection = {
       val eventType = event.data.eventType
-      classMap.get(eventType) match {
+      ClassMap.get(eventType) match {
         case None =>
           logNoClassFoundFor(eventType)
           deletes
@@ -82,12 +82,12 @@ class EventStoreSnapshotStore extends SnapshotStore with EventStorePlugin {
   }
 
   def eventData(metadata: SnapshotMetadata, snapshot: Any): EventData = EventData(
-    eventType = eventTypeMap(SnapshotClass),
+    eventType = EventTypeMap(SnapshotClass),
     data = serialize(Snapshot(snapshot)),
     metadata = serialize(metadata))
 
   def eventData(x: SnapshotEvent): EventData = EventData(
-    eventType = eventTypeMap(x.getClass),
+    eventType = EventTypeMap(x.getClass),
     data = serialize(x))
 
   def eventStream(x: ProcessorId): EventStream.Id = EventStream(normalize(x) + "-snapshots")
@@ -103,13 +103,13 @@ object EventStoreSnapshotStore {
   sealed trait SnapshotEvent
 
   object SnapshotEvent {
-    private[EventStoreSnapshotStore] val SnapshotClass = classOf[Snapshot]
-    val classMap: Map[String, Class[_ <: SnapshotEvent]] = Map(
+    val SnapshotClass: Class[Snapshot] = classOf[Snapshot]
+    val ClassMap: Map[String, Class[_ <: SnapshotEvent]] = Map(
       "snapshot" -> SnapshotClass,
       "delete" -> classOf[Delete],
       "deleteCriteria" -> classOf[DeleteCriteria])
 
-    val eventTypeMap: Map[Class[_ <: SnapshotEvent], String] = classMap.map(_.swap)
+    val EventTypeMap: Map[Class[_ <: SnapshotEvent], String] = ClassMap.map(_.swap)
 
     @SerialVersionUID(0)
     case class Snapshot(data: Any) extends SnapshotEvent

@@ -30,9 +30,9 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
     cs.groupBy(_.processorId).map {
       case (processorId, cs) =>
         val map = cs.groupBy(_.sequenceNr).map {
-          case (seqNr, pcs) => (seqNr, pcs.map(_.channelId))
+          case (seqNr, pcs) => Confirm.Line(seqNr, pcs.map(_.channelId))
         }
-        addUpdate(processorId, Confirm(map))
+        addUpdate(processorId, Confirm(map.toList))
     }
   }
 
@@ -87,7 +87,7 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
     eventType = x.payload.getClass.getSimpleName,
     data = serialize(x))
 
-  def eventData(x: Update): EventData = EventData(eventTypeMap(x.getClass), data = serialize(x))
+  def eventData(x: Update): EventData = EventData(EventTypeMap(x.getClass), data = serialize(x))
 
   def persistentRepr(x: EventData): PersistentRepr =
     deserialize[PersistentRepr](x.data, classOf[PersistentRepr])
@@ -95,15 +95,16 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
   def updates(processorId: String): Future[Updates] = {
     def fold(updates: Updates, event: Event): Updates = {
       val eventType = event.data.eventType
-      classMap.get(eventType) match {
+      ClassMap.get(eventType) match {
         case None =>
           logNoClassFoundFor(eventType)
           updates
 
         case Some(c) => deserialize(event.data.data, c) match {
-          case Confirm(m1) =>
-            val m2 = updates.confirms
-            val confirms = m1 ++ m2.map { case (k, v) => k -> (v ++ m1.getOrElse(k, Nil)) }
+          case Confirm(xs) =>
+            val confirms = xs.foldLeft(updates.confirms) {
+              case (map, Confirm.Line(seqNr, chanIds)) => map.updated(seqNr, chanIds ++ map.getOrElse(seqNr, Nil))
+            }
             updates.copy(confirms = confirms)
 
           case Delete(sequenceNrs, permanent) =>
@@ -136,18 +137,23 @@ object EventStoreJournal {
   object Update {
     def eventStream(x: String): EventStream.Id = EventStream(normalize(x) + "-updates")
 
-    val classMap: Map[String, Class[_ <: Update]] = Map(
+    val ClassMap: Map[String, Class[_ <: Update]] = Map(
       "confirm" -> classOf[Confirm],
       "delete" -> classOf[Delete],
       "deleteTo" -> classOf[DeleteTo])
 
-    val eventTypeMap: Map[Class[_ <: Update], String] = classMap.map(_.swap)
+    val EventTypeMap: Map[Class[_ <: Update], String] = ClassMap.map(_.swap)
 
     @SerialVersionUID(0)
-    case class Confirm(confirms: Confirms) extends Update
+    case class Confirm(confirms: Seq[Confirm.Line]) extends Update
+
+    object Confirm {
+      @SerialVersionUID(0)
+      case class Line(sequenceNr: SequenceNr, channelIds: Seq[String])
+    }
 
     @SerialVersionUID(0)
-    case class Delete(sequenceNrs: Seq[SequenceNr], permanent: Boolean) extends Update
+    case class Delete(sequenceNrs: Seq[Long], permanent: Boolean) extends Update
 
     @SerialVersionUID(0)
     case class DeleteTo(toSequenceNr: SequenceNr, permanent: Boolean) extends Update
