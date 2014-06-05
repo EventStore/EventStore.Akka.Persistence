@@ -16,12 +16,12 @@ To configure EventStore.JVM client, see it's [reference.conf](https://github.com
 ### JSON serialization
 
 Akka serializes your messages into binary data by default.
-However you can [add your own serializer](http://doc.akka.io/docs/akka/2.3.3/scala/serialization.html#Customization) to serialize as JSON
+However you can [add your own serializer](http://doc.akka.io/docs/akka/2.3.3/scala/serialization.html#Customization) to serialize as JSON,
 But make sure to extend `akka.persistence.eventstore.EventStoreSerializer` rather then `akka.serialization.Serializer`
  
 ```scala
 class JsonSerializer extends EventStoreSerializer {
-  def contentType = ContentType.Json
+  def contentType = ContentType.Json // This will tell Event Store to hanlde your data as JSON
 }
 ```
  
