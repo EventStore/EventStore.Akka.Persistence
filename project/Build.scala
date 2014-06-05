@@ -22,7 +22,7 @@ object Build extends Build {
     val persistence = apply("persistence-experimental")
     val testkit     = apply("testkit") % "test"
 
-    private def apply(x: String) = "com.typesafe.akka" %% "akka-%s".format(x) % "2.3.2"
+    private def apply(x: String) = "com.typesafe.akka" %% "akka-%s".format(x) % "2.3.3"
   }
 
   val eventstoreClient = "com.geteventstore" %% "eventstore-client" % "0.4.0"
