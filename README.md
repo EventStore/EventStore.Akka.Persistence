@@ -1,12 +1,31 @@
-## Event Store Journal for Akka Persistence [![Build Status](https://travis-ci.org/EventStore/EventStore.Akka.Persistence.png?branch=master)](https://travis-ci.org/EventStore/EventStore.Akka.Persistence)
+## Event Store Journal and Snapshot Store for Akka Persistence [![Build Status](https://travis-ci.org/EventStore/EventStore.Akka.Persistence.png?branch=master)](https://travis-ci.org/EventStore/EventStore.Akka.Persistence)
 
 [Akka Persistence](http://doc.akka.io/docs/akka/2.3.3/scala/persistence.html) journal backed by [Event Store](http://geteventstore.com/).
 
 To use this plugin prior default one, add the following to `application.conf`:
 
-```akka.persistence.journal.plugin = eventstore.journal```
+```
+akka.persistence {
+  journal.plugin = eventstore.persistence.journal
+  snapshot-store.plugin = eventstore.persistence.snapshot-store
+}
+```
 
 To configure EventStore.JVM client, see it's [reference.conf](https://github.com/EventStore/EventStore.JVM/blob/master/src/main/resources/reference.conf)
+
+### JSON serialization
+
+Akka serializes your messages into binary data by default.
+However you can [add your own serializer](http://doc.akka.io/docs/akka/2.3.3/scala/serialization.html#Customization) to serialize as JSON
+But make sure to extend `akka.persistence.eventstore.EventStoreSerializer` rather then `akka.serialization.Serializer`
+ 
+```scala
+class JsonSerializer extends EventStoreSerializer {
+  def contentType = ContentType.Json
+}
+```
+ 
+Please check out [real example](blob/master/src/test/scala/akka/persistence/eventstore/Json4sSerializer.scala) used in tests 
 
 ## Setup
 
