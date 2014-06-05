@@ -4,7 +4,8 @@ import akka.actor.{ ActorLogging, Actor }
 import akka.serialization.{ SerializationExtension, Serialization }
 import scala.concurrent.Future
 import scala.util.{ Failure, Success, Try }
-import eventstore.{ Content, EsConnection }
+import eventstore.{ ContentType, Content, EsConnection }
+import akka.util.ByteString
 
 trait EventStorePlugin extends ActorLogging { self: Actor =>
   val connection: EsConnection = EsConnection(context.system)
@@ -16,7 +17,12 @@ trait EventStorePlugin extends ActorLogging { self: Actor =>
   }
 
   def serialize(x: AnyRef): Content = {
-    Content(serialization.serialize(x).get)
+    val serializer = serialization.findSerializerFor(x)
+    val contentType = serializer match {
+      case x: EventStoreSerializer => x.contentType
+      case _                       => ContentType.Binary
+    }
+    Content(ByteString(serializer.toBinary(x)), contentType)
   }
 
   def asyncUnit(x: => Future[_]): Future[Unit] = async(x).map(_ => Unit)

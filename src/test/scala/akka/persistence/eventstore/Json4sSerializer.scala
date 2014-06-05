@@ -6,8 +6,9 @@ import org.json4s.native.Serialization.{ read, write }
 import java.nio.charset.Charset
 import java.nio.ByteBuffer
 import snapshot.EventStoreSnapshotStore.SnapshotEvent.SnapshotClass
+import eventstore.ContentType
 
-class Json4sSerializer extends akka.serialization.Serializer {
+class Json4sSerializer extends EventStoreSerializer {
   import Json4sSerializer._
 
   def identifier = Identifier
@@ -23,6 +24,8 @@ class Json4sSerializer extends akka.serialization.Serializer {
   }
 
   def toBinary(o: AnyRef) = write(o).getBytes(UTF8)
+
+  def contentType = ContentType.Json
 }
 
 object Json4sSerializer {
