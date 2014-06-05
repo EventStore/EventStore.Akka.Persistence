@@ -1,4 +1,4 @@
-## Event Store Journal and Snapshot Store for Akka Persistence [![Build Status](https://travis-ci.org/EventStore/EventStore.Akka.Persistence.png?branch=master)](https://travis-ci.org/EventStore/EventStore.Akka.Persistence)
+### Event Store Journal and Snapshot Store for Akka Persistence [![Build Status](https://travis-ci.org/EventStore/EventStore.Akka.Persistence.png?branch=master)](https://travis-ci.org/EventStore/EventStore.Akka.Persistence)
 
 [Akka Persistence](http://doc.akka.io/docs/akka/2.3.3/scala/persistence.html) journal backed by [Event Store](http://geteventstore.com/).
 
@@ -27,7 +27,7 @@ class JsonSerializer extends EventStoreSerializer {
  
 Please check out [real example](blob/master/src/test/scala/akka/persistence/eventstore/Json4sSerializer.scala) used in tests 
 
-## Setup
+### Setup
 
 * Maven:
 
