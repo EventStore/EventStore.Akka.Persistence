@@ -16,7 +16,7 @@ class EventStoreSnapshotStore extends SnapshotStore with EventStorePlugin {
   import EventStoreSnapshotStore.SnapshotEvent._
   import context.dispatcher
 
-  val config: Config = context.system.settings.config.getConfig("eventstore.snapshot-store")
+  val config: Config = context.system.settings.config.getConfig("eventstore.persistence.snapshot-store")
   val deleteAwait: FiniteDuration = config.getDuration("delete-await", TimeUnit.MILLISECONDS).millis
   val readBatchSize: Int = config.getInt("read-batch-size")
 
