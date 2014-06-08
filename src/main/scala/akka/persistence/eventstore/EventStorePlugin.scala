@@ -4,11 +4,11 @@ import akka.actor.{ ActorLogging, Actor }
 import akka.serialization.{ SerializationExtension, Serialization }
 import scala.concurrent.Future
 import scala.util.{ Failure, Success, Try }
-import eventstore.{ ContentType, Content, EsConnection }
+import eventstore.{ ContentType, Content, EsConnection, EventStoreExtension }
 import akka.util.ByteString
 
 trait EventStorePlugin extends ActorLogging { self: Actor =>
-  val connection: EsConnection = EsConnection(context.system)
+  val connection: EsConnection = EventStoreExtension(context.system).connection
   private val serialization: Serialization = SerializationExtension(context.system)
   import context.dispatcher
 

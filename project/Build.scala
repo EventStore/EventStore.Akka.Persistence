@@ -25,7 +25,7 @@ object Build extends Build {
     private def apply(x: String) = "com.typesafe.akka" %% "akka-%s".format(x) % "2.3.3"
   }
 
-  val eventstoreClient = "com.geteventstore" %% "eventstore-client" % "0.4.0"
+  val eventstoreClient = "com.geteventstore" %% "eventstore-client" % "0.5.0-SNAPSHOT"
   val specs2 = "org.specs2" %% "specs2" % "2.3.11" % "test"
   val persistenceTestkit = "com.github.krasserm" %% "akka-persistence-testkit" % "0.3.1" % "test"
   val json4s = "org.json4s" %% "json4s-native" % "3.2.9" % "test"
