@@ -17,8 +17,6 @@ object Helpers {
 
   def sequenceNumber(x: EventNumber.Exact): SequenceNr = x.value.toLong + 1
 
-  def normalize(x: ProcessorId): ProcessorId = x.replaceAll("/{1,}", "-").replaceAll("(^-)|(-$)", "")
-
   sealed trait Batch {
     def events: List[Event]
   }
