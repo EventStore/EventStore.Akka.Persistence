@@ -21,7 +21,7 @@ But make sure to extend `akka.persistence.eventstore.EventStoreSerializer` rathe
  
 ```scala
 class JsonSerializer extends EventStoreSerializer {
-  def contentType = ContentType.Json // This will tell Event Store to hanlde your data as JSON
+  def contentType = ContentType.Json // This will tell Event Store to handle your data as JSON
 }
 ```
  
@@ -37,7 +37,7 @@ Add to `pom.xml`
     <dependency>
         <groupId>com.geteventstore</groupId>
         <artifactId>akka-persistence-eventstore_2.11</artifactId>
-        <version>0.0.1</version>
+        <version>0.0.2</version>
     </dependency>
 ```
 
@@ -46,5 +46,5 @@ Add to `pom.xml`
 Add to `build.sbt`
 
 ```scala
-    libraryDependencies += "com.geteventstore" %% "akka-persistence-eventstore" % "0.0.1"
+    libraryDependencies += "com.geteventstore" %% "akka-persistence-eventstore" % "0.0.2"
 ```
