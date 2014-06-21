@@ -3,7 +3,7 @@ package akka.persistence.eventstore.journal
 import akka.persistence.journal.AsyncWriteJournal
 import akka.persistence.{ PersistentConfirmation, PersistentId, PersistentRepr }
 import akka.persistence.eventstore.Helpers._
-import akka.persistence.eventstore.{ Normalize, EventStorePlugin }
+import akka.persistence.eventstore.{ UrlEncoder, EventStorePlugin }
 import scala.collection.immutable.Seq
 import scala.concurrent.Future
 import eventstore._
@@ -81,7 +81,7 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
     asyncReplayMessages(eventNumber(from), eventNumber(to), max.toIntOrError)
   }
 
-  def eventStream(processorId: String): EventStream.Id = EventStream(Normalize(processorId))
+  def eventStream(processorId: String): EventStream.Id = EventStream(UrlEncoder(processorId))
 
   def eventData(x: PersistentRepr): EventData = EventData(
     eventType = x.payload.getClass.getSimpleName,
@@ -135,7 +135,7 @@ object EventStoreJournal {
   sealed trait Update
 
   object Update {
-    def eventStream(x: String): EventStream.Id = EventStream(Normalize(x) + "-updates")
+    def eventStream(x: String): EventStream.Id = EventStream(UrlEncoder(x) + "-updates")
 
     val ClassMap: Map[String, Class[_ <: Update]] = Map(
       "confirm" -> classOf[Confirm],

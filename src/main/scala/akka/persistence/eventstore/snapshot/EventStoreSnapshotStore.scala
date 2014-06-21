@@ -3,7 +3,7 @@ package akka.persistence.eventstore.snapshot
 import akka.persistence.snapshot.SnapshotStore
 import akka.persistence.{ SelectedSnapshot, SnapshotMetadata, SnapshotSelectionCriteria }
 import akka.persistence.eventstore.Helpers._
-import akka.persistence.eventstore.{ Normalize, EventStorePlugin }
+import akka.persistence.eventstore.{ UrlEncoder, EventStorePlugin }
 import java.util.concurrent.TimeUnit
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -90,7 +90,7 @@ class EventStoreSnapshotStore extends SnapshotStore with EventStorePlugin {
     eventType = EventTypeMap(x.getClass),
     data = serialize(x))
 
-  def eventStream(x: ProcessorId): EventStream.Id = EventStream(Normalize(x) + "-snapshots")
+  def eventStream(x: ProcessorId): EventStream.Id = EventStream(UrlEncoder(x) + "-snapshots")
 
   def delete(processorId: String, se: DeleteEvent): Unit = {
     val streamId = eventStream(processorId)
