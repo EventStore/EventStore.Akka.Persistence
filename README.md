@@ -25,7 +25,9 @@ class JsonSerializer extends EventStoreSerializer {
 }
 ```
  
-Please check out [real example](src/test/scala/akka/persistence/eventstore/Json4sSerializer.scala) used in tests 
+Please check out some real examples used in tests:
+* [json4s](src/test/scala/akka/persistence/eventstore/Json4sSerializer.scala)
+* [spray-json](src/test/scala/akka/persistence/eventstore/SprayJsonSerializer.scala)
 
 ### Setup
 

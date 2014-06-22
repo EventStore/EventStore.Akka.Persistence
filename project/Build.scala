@@ -15,7 +15,8 @@ object Build extends Build {
     startYear            := Some(2013),
     scalacOptions        := Seq("-encoding", "UTF-8", "-unchecked", "-deprecation", "-feature"),
     resolvers            += "krasserm at bintray" at "http://dl.bintray.com/krasserm/maven",
-    libraryDependencies ++= Seq(Akka.persistence, Akka.testkit, eventstoreClient, specs2, persistenceTestkit, json4s))
+    resolvers            += "spray" at "http://repo.spray.io/",
+    libraryDependencies ++= Seq(Akka.persistence, Akka.testkit, eventstoreClient, specs2, persistenceTestkit, json4s, sprayJson))
 
   object Akka {
     val actor       = apply("actor")
@@ -28,7 +29,8 @@ object Build extends Build {
   val eventstoreClient = "com.geteventstore" %% "eventstore-client" % "0.5.0"
   val specs2 = "org.specs2" %% "specs2" % "2.3.11" % "test"
   val persistenceTestkit = "com.github.krasserm" %% "akka-persistence-testkit" % "0.3.1" % "test"
-  val json4s = "org.json4s" %% "json4s-native" % "3.2.9" % "test"
+  val json4s    = "org.json4s" %% "json4s-native" % "3.2.9" % "test"
+  val sprayJson = "io.spray" %% "spray-json" % "1.2.6" % "test"
 
   def integrationFilter(name: String): Boolean = name endsWith "IntegrationSpec"
   def specFilter(name: String): Boolean = (name endsWith "Spec") && !integrationFilter(name)
