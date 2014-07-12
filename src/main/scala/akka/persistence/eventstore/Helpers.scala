@@ -1,17 +1,14 @@
 package akka.persistence.eventstore
 
 import scala.concurrent.{ ExecutionContext, Future }
-import scala.collection.immutable.Seq
 import scala.PartialFunction.cond
 import eventstore._
 import eventstore.ReadStreamEventsCompleted
 
 object Helpers {
   type Timestamp = Long
-  type ProcessorId = String
+  type PersistenceId = String
   type SequenceNr = Long
-  type ChannelId = String
-  type Confirms = Map[SequenceNr, Seq[ChannelId]]
 
   def eventNumber(x: SequenceNr): EventNumber.Exact = EventNumber(x.toIntOrError - 1)
 

@@ -20,7 +20,7 @@ class EventStoreSnapshotStore extends SnapshotStore with EventStorePlugin {
   val deleteAwait: FiniteDuration = config.getDuration("delete-await", TimeUnit.MILLISECONDS).millis
   val readBatchSize: Int = config.getInt("read-batch-size")
 
-  def loadAsync(processorId: String, criteria: SnapshotSelectionCriteria) = async {
+  def loadAsync(persistenceId: PersistenceId, criteria: SnapshotSelectionCriteria) = async {
     import Selection._
     def fold(deletes: Deletes, event: Event): Selection = {
       val eventType = event.data.eventType
@@ -57,7 +57,7 @@ class EventStoreSnapshotStore extends SnapshotStore with EventStorePlugin {
       }
     }
 
-    val streamId = eventStream(processorId)
+    val streamId = eventStream(persistenceId)
     val req = ReadStreamEvents(streamId, EventNumber.Last, maxCount = readBatchSize, direction = Backward)
     connection.foldLeft(req, Empty) {
       case (deletes: Deletes, event) => fold(deletes, event)
@@ -65,18 +65,18 @@ class EventStoreSnapshotStore extends SnapshotStore with EventStorePlugin {
   }
 
   def saveAsync(metadata: SnapshotMetadata, snapshot: Any) = asyncUnit {
-    val streamId = eventStream(metadata.processorId)
+    val streamId = eventStream(metadata.persistenceId)
     connection.future(WriteEvents(streamId, List(eventData(metadata, snapshot))))
   }
 
   def saved(metadata: SnapshotMetadata) = {}
 
   def delete(metadata: SnapshotMetadata) = {
-    delete(metadata.processorId, Delete(metadata.sequenceNr, timestamp = metadata.timestamp))
+    delete(metadata.persistenceId, Delete(metadata.sequenceNr, timestamp = metadata.timestamp))
   }
 
-  def delete(processorId: String, criteria: SnapshotSelectionCriteria) = {
-    delete(processorId, SnapshotEvent.DeleteCriteria(
+  def delete(persistenceId: PersistenceId, criteria: SnapshotSelectionCriteria) = {
+    delete(persistenceId, SnapshotEvent.DeleteCriteria(
       maxSequenceNr = criteria.maxSequenceNr,
       maxTimestamp = criteria.maxTimestamp))
   }
@@ -90,10 +90,10 @@ class EventStoreSnapshotStore extends SnapshotStore with EventStorePlugin {
     eventType = EventTypeMap(x.getClass),
     data = serialize(x))
 
-  def eventStream(x: ProcessorId): EventStream.Id = EventStream(UrlEncoder(x) + "-snapshots")
+  def eventStream(x: PersistenceId): EventStream.Id = EventStream(UrlEncoder(x) + "-snapshots")
 
-  def delete(processorId: String, se: DeleteEvent): Unit = {
-    val streamId = eventStream(processorId)
+  def delete(persistenceId: PersistenceId, se: DeleteEvent): Unit = {
+    val streamId = eventStream(persistenceId)
     val future = connection.future(WriteEvents(streamId, List(eventData(se))))
     Await.result(future, deleteAwait)
   }

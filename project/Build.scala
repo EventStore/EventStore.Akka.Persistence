@@ -23,24 +23,24 @@ object Build extends Build {
     val persistence = apply("persistence-experimental")
     val testkit     = apply("testkit") % "test"
 
-    private def apply(x: String) = "com.typesafe.akka" %% "akka-%s".format(x) % "2.3.3"
+    private def apply(x: String) = "com.typesafe.akka" %% s"akka-$x" % "2.3.4"
   }
 
-  val eventstoreClient = "com.geteventstore" %% "eventstore-client" % "0.5.0"
-  val specs2 = "org.specs2" %% "specs2" % "2.3.11" % "test"
-  val persistenceTestkit = "com.github.krasserm" %% "akka-persistence-testkit" % "0.3.1" % "test"
-  val json4s    = "org.json4s" %% "json4s-native" % "3.2.9" % "test"
-  val sprayJson = "io.spray" %% "spray-json" % "1.2.6" % "test"
+  val eventstoreClient   = "com.geteventstore" %% "eventstore-client" % "1.0.0-SNAPSHOT"
+  val specs2             = "org.specs2" %% "specs2" % "2.3.11" % "test"
+  val persistenceTestkit = "com.github.krasserm" %% "akka-persistence-testkit" % "0.3.3" % "test"
+  val json4s             = "org.json4s" %% "json4s-native" % "3.2.9"
+  val sprayJson          = "io.spray" %% "spray-json" % "1.2.6" % "test"
 
   def integrationFilter(name: String): Boolean = name endsWith "IntegrationSpec"
   def specFilter(name: String): Boolean = (name endsWith "Spec") && !integrationFilter(name)
 
-  lazy val IntegrationTest = config("integration") extend Test
+  lazy val IntegrationTest = config("it") extend Test
 
   lazy val root = Project(
     "akka-persistence-eventstore",
     file("."),
-    settings = basicSettings ++ Defaults.defaultSettings ++ releaseSettings ++ Scalariform.settings ++ Publish.settings)
+    settings = basicSettings ++ Defaults.coreDefaultSettings ++ releaseSettings ++ Scalariform.settings ++ Publish.settings)
     .configs(IntegrationTest)
     .settings(inConfig(IntegrationTest)(Defaults.testTasks): _*)
     .settings(

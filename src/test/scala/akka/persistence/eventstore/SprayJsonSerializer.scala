@@ -4,7 +4,6 @@ import java.nio.charset.Charset
 
 import java.nio.ByteBuffer
 import akka.persistence.SnapshotMetadata
-import akka.persistence.eventstore.journal.EventStoreJournal.Update
 import akka.persistence.eventstore.snapshot.EventStoreSnapshotStore.SnapshotEvent
 import akka.persistence.eventstore.snapshot.EventStoreSnapshotStore.SnapshotEvent.Snapshot
 import eventstore.ContentType
@@ -47,9 +46,6 @@ object SprayJsonSerializer {
       entry(jsonFormat3(SnapshotMetadata.apply)),
       entry(jsonFormat2(SnapshotEvent.DeleteCriteria.apply)),
       entry(jsonFormat2(SnapshotEvent.Delete.apply)),
-      entry(jsonFormat2(Update.DeleteTo)),
-      entry(UpdateDeleteFormat),
-      entry(UpdateConfirmFormat),
       entry(SnapshotFormat))
 
     def classFormatMap(x: Class[_]) = ClassFormatMap.getOrElse(x, sys.error(s"JsonFormat not found for $x"))
@@ -68,30 +64,6 @@ object SprayJsonSerializer {
         case x: String => JsObject("data" -> JsString(x))
         case _         => serializationError("string expected")
       }
-    }
-
-    object UpdateDeleteFormat extends JsonFormat[Update.Delete] {
-      def read(json: JsValue) = json.asJsObject.getFields("sequenceNrs", "permanent") match {
-        case Seq(JsArray(xs), JsBoolean(permanent)) =>
-          val sequenceNrs = xs.collect { case JsNumber(x) => x.toLong }
-          Update.Delete(sequenceNrs, permanent)
-        case _ => deserializationError("Update.Delete expected")
-      }
-
-      def write(obj: Update.Delete) = JsObject(
-        "sequenceNrs" -> JsArray(obj.sequenceNrs.toList.map(JsNumber(_))),
-        "permanent" -> JsBoolean(obj.permanent))
-    }
-
-    object UpdateConfirmFormat extends JsonFormat[Update.Confirm] {
-      def read(json: JsValue) = json.asJsObject.getFields("confirms") match {
-        case Seq(JsArray(xs)) => Update.Confirm(xs.map(LineFormat.read))
-        case _                => deserializationError("Update.Confirm expected")
-      }
-
-      def write(obj: Update.Confirm) = JsObject("confirms" -> JsArray(obj.confirms.toList.map(LineFormat.write)))
-
-      val LineFormat = jsonFormat2(Update.Confirm.Line.apply)
     }
   }
 }
