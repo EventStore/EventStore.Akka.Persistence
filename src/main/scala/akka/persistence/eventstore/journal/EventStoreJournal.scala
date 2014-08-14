@@ -36,7 +36,7 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
       else deleteToCache.get(persistenceId).fold(s"""{"$TruncateBefore":$to}""") {
         deleteTo => s"""{"$TruncateBefore":$to,"$DeleteTo":$deleteTo}"""
       }
-    val eventData = EventData.StreamMetadata(json)
+    val eventData = EventData.StreamMetadata(Content.Json(json))
     val streamId = eventStream(persistenceId).metadata
     val req = WriteEvents(streamId, List(eventData))
     connection.future(req)
