@@ -10,7 +10,7 @@ object Helpers {
   type PersistenceId = String
   type SequenceNr = Long
 
-  def eventNumber(x: SequenceNr): EventNumber.Exact = EventNumber(x.toIntOrError - 1)
+  def eventNumber(x: SequenceNr): EventNumber.Exact = EventNumber.Exact(x.toIntOrError - 1)
 
   def sequenceNumber(x: EventNumber.Exact): SequenceNr = x.value.toLong + 1
 

@@ -90,7 +90,7 @@ class EventStoreSnapshotStore extends SnapshotStore with EventStorePlugin {
     eventType = EventTypeMap(x.getClass),
     data = serialize(x))
 
-  def eventStream(x: PersistenceId): EventStream.Id = EventStream(UrlEncoder(x) + "-snapshots")
+  def eventStream(x: PersistenceId): EventStream.Id = EventStream.Id(UrlEncoder(x) + "-snapshots")
 
   def delete(persistenceId: PersistenceId, se: DeleteEvent): Unit = {
     val streamId = eventStream(persistenceId)

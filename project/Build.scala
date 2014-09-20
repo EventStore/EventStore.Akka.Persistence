@@ -6,8 +6,8 @@ object Build extends Build {
   lazy val basicSettings = Seq(
     name                 := "akka-persistence-eventstore",
     organization         := "com.geteventstore",
-    scalaVersion         := "2.11.0",
-    crossScalaVersions   := Seq("2.10.4", "2.11.0"),
+    scalaVersion         := "2.11.2",
+    crossScalaVersions   := Seq("2.10.4", "2.11.2"),
     licenses             := Seq("BSD 3-Clause" -> url("http://raw.github.com/EventStore/EventStore.Akka.Persistence/master/LICENSE")),
     homepage             := Some(new URL("http://github.com/EventStore/EventStore.Akka.Persistence")),
     organizationHomepage := Some(new URL("http://geteventstore.com")),
@@ -19,17 +19,16 @@ object Build extends Build {
     libraryDependencies ++= Seq(Akka.persistence, Akka.testkit, eventstoreClient, specs2, persistenceTestkit, json4s, sprayJson))
 
   object Akka {
-    val actor       = apply("actor")
     val persistence = apply("persistence-experimental")
     val testkit     = apply("testkit") % "test"
 
-    private def apply(x: String) = "com.typesafe.akka" %% s"akka-$x" % "2.3.4"
+    private def apply(x: String) = "com.typesafe.akka" %% s"akka-$x" % "2.3.6" withSources()
   }
 
-  val eventstoreClient   = "com.geteventstore" %% "eventstore-client" % "1.0.0-SNAPSHOT"
-  val specs2             = "org.specs2" %% "specs2" % "2.3.11" % "test"
-  val persistenceTestkit = "com.github.krasserm" %% "akka-persistence-testkit" % "0.3.3" % "test"
-  val json4s             = "org.json4s" %% "json4s-native" % "3.2.9"
+  val eventstoreClient   = "com.geteventstore" %% "eventstore-client" % "1.0.0-SNAPSHOT" withSources()
+  val specs2             = "org.specs2" %% "specs2" % "2.3.13" % "test"
+  val persistenceTestkit = "com.github.krasserm" %% "akka-persistence-testkit" % "0.3.4" % "test" withSources()
+  val json4s             = "org.json4s" %% "json4s-native" % "3.2.10"
   val sprayJson          = "io.spray" %% "spray-json" % "1.2.6" % "test"
 
   def integrationFilter(name: String): Boolean = name endsWith "IntegrationSpec"
