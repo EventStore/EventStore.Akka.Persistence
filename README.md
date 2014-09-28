@@ -2,6 +2,21 @@
 
 [Akka Persistence](http://doc.akka.io/docs/akka/2.3.6/scala/persistence.html) journal and snapshot-store backed by [Event Store](http://geteventstore.com/).
 
+<table border="0">
+  <tr>
+    <td><a href="http://www.scala-lang.org">Scala</a> </td>
+    <td>2.10.4/2.11.2</td>
+  </tr>
+  <tr>
+    <td><a href="http://akka.io">Akka</a> </td>
+    <td>2.3.6</td>
+  </tr>
+  <tr>
+    <td><a href="https://github.com/EventStore/EventStore.JVM">eventstore-client</a> </td>
+    <td>1.0.0</td>
+  </tr>
+</table>
+
 To use this plugin prior default one, add the following to `application.conf`:
 
 ```
