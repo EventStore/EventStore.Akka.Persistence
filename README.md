@@ -1,6 +1,6 @@
 ### Event Store Journal and Snapshot Store for Akka Persistence [![Build Status](https://travis-ci.org/EventStore/EventStore.Akka.Persistence.png?branch=master)](https://travis-ci.org/EventStore/EventStore.Akka.Persistence)
 
-[Akka Persistence](http://doc.akka.io/docs/akka/2.3.3/scala/persistence.html) journal and snapshot-store backed by [Event Store](http://geteventstore.com/).
+[Akka Persistence](http://doc.akka.io/docs/akka/2.3.6/scala/persistence.html) journal and snapshot-store backed by [Event Store](http://geteventstore.com/).
 
 To use this plugin prior default one, add the following to `application.conf`:
 
@@ -16,7 +16,7 @@ To configure EventStore.JVM client, see it's [reference.conf](https://github.com
 ### JSON serialization
 
 Akka serializes your messages into binary data by default.
-However you can [add your own serializer](http://doc.akka.io/docs/akka/2.3.3/scala/serialization.html#Customization) to serialize as JSON,
+However you can [add your own serializer](http://doc.akka.io/docs/akka/2.3.6/scala/serialization.html#Customization) to serialize as JSON,
 But make sure to extend `akka.persistence.eventstore.EventStoreSerializer` rather then `akka.serialization.Serializer`
  
 ```scala
@@ -39,7 +39,7 @@ Add to `pom.xml`
     <dependency>
         <groupId>com.geteventstore</groupId>
         <artifactId>akka-persistence-eventstore_2.11</artifactId>
-        <version>0.0.2</version>
+        <version>1.0.0</version>
     </dependency>
 ```
 
@@ -48,5 +48,5 @@ Add to `pom.xml`
 Add to `build.sbt`
 
 ```scala
-    libraryDependencies += "com.geteventstore" %% "akka-persistence-eventstore" % "0.0.2"
+    libraryDependencies += "com.geteventstore" %% "akka-persistence-eventstore" % "1.0.0"
 ```

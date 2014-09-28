@@ -7,7 +7,6 @@ import akka.persistence.eventstore.{ UrlEncoder, EventStorePlugin }
 import scala.collection.immutable.Seq
 import scala.concurrent.Future
 import eventstore._
-import eventstore.EventStream.Plain
 import org.json4s.DefaultFormats
 import org.json4s.native.JsonMethods.parse
 
@@ -23,7 +22,7 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
         val events = msgs.map(eventData)
         val expVer = msgs.head.sequenceNr - 1 match {
           case 0L => ExpectedVersion.NoStream
-          case x  => ExpectedVersion(eventNumber(x))
+          case x  => ExpectedVersion.Exact(eventNumber(x))
         }
         val req = WriteEvents(eventStream(persistenceId), events.toList, expVer)
         connection.future(req)
@@ -36,7 +35,7 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
       else deleteToCache.get(persistenceId).fold(s"""{"$TruncateBefore":$to}""") {
         deleteTo => s"""{"$TruncateBefore":$to,"$DeleteTo":$deleteTo}"""
       }
-    val eventData = EventData.StreamMetadata(json)
+    val eventData = EventData.StreamMetadata(Content.Json(json))
     val streamId = eventStream(persistenceId).metadata
     val req = WriteEvents(streamId, List(eventData))
     connection.future(req)
@@ -74,8 +73,8 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
     sys.error("asyncDeleteMessages is deprecated and not supported")
 
   def eventStream(x: PersistenceId): EventStream.Plain = EventStream(UrlEncoder(x)) match {
-    case plain: Plain => plain
-    case other        => sys.error(s"can't create plain event stream for $x")
+    case plain: EventStream.Plain => plain
+    case other                    => sys.error(s"can't create plain event stream for $x")
   }
 
   def eventData(x: PersistentRepr): EventData = EventData(
