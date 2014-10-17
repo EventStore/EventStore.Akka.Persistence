@@ -77,9 +77,16 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
     case other                    => sys.error(s"can't create plain event stream for $x")
   }
 
-  def eventData(x: PersistentRepr): EventData = EventData(
-    eventType = x.payload.getClass.getSimpleName,
-    data = serialize(x))
+  def eventData(x: PersistentRepr): EventData = {
+    val payloadClassName = x.payload.getClass.getName
+    val payloadClassSimpleName = try {
+      x.payload.getClass.getSimpleName
+    } catch {
+      // simple name will start with $
+      case e: InternalError => payloadClassName.substring(payloadClassName.lastIndexOf('$'))
+    }
+    EventData(eventType = payloadClassSimpleName, data = serialize(x))
+  }
 
   def persistentRepr(x: EventData): PersistentRepr =
     deserialize[PersistentRepr](x.data, classOf[PersistentRepr])
