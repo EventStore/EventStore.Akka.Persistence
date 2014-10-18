@@ -19,7 +19,7 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
   def asyncWriteMessages(messages: Seq[PersistentRepr]) = asyncSeq {
     messages.groupBy(_.persistenceId).map {
       case (persistenceId, msgs) =>
-        val events = msgs.map(eventData)
+        val events = msgs.map(x => serialize(x, Some(x.payload)))
         val expVer = msgs.head.sequenceNr - 1 match {
           case 0L => ExpectedVersion.NoStream
           case x  => ExpectedVersion.Exact(eventNumber(x))
@@ -57,7 +57,7 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
         connection.foldLeft(req, max) {
           case (left, event) if event.number <= to && left > 0 =>
             val seqNr = sequenceNumber(event.number)
-            val repr = persistentRepr(event.data).update(deleted = seqNr <= deletedTo)
+            val repr = deserialize(event, classOf[PersistentRepr]).update(deleted = seqNr <= deletedTo)
             replayCallback(repr)
             left - 1
         }
@@ -74,15 +74,8 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
 
   def eventStream(x: PersistenceId): EventStream.Plain = EventStream(UrlEncoder(x)) match {
     case plain: EventStream.Plain => plain
-    case other                    => sys.error(s"can't create plain event stream for $x")
+    case other                    => sys.error(s"Cannot create plain event stream for $x")
   }
-
-  def eventData(x: PersistentRepr): EventData = EventData(
-    eventType = x.payload.getClass.getSimpleName,
-    data = serialize(x))
-
-  def persistentRepr(x: EventData): PersistentRepr =
-    deserialize[PersistentRepr](x.data, classOf[PersistentRepr])
 
   def deletedTo(persistenceId: PersistenceId): Future[SequenceNr] = {
     deleteToCache.get(persistenceId) match {

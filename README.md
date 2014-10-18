@@ -13,7 +13,7 @@
   </tr>
   <tr>
     <td><a href="https://github.com/EventStore/EventStore.JVM">eventstore-client</a> </td>
-    <td>1.0.0</td>
+    <td>1.0.1</td>
   </tr>
 </table>
 
@@ -32,11 +32,13 @@ To configure EventStore.JVM client, see it's [reference.conf](https://github.com
 
 Akka serializes your messages into binary data by default.
 However you can [add your own serializer](http://doc.akka.io/docs/akka/2.3.6/scala/serialization.html#Customization) to serialize as JSON,
-But make sure to extend `akka.persistence.eventstore.EventStoreSerializer` rather then `akka.serialization.Serializer`
+But make sure you extend `akka.persistence.eventstore.EventStoreSerializer` rather then `akka.serialization.Serializer`. 
+And in case you are really going to serialize as json, please specify `ContentType.Json`, it will allow you to use projections.
  
 ```scala
-class JsonSerializer extends EventStoreSerializer {
-  def contentType = ContentType.Json // This will tell Event Store to handle your data as JSON
+trait EventStoreSerializer extends Serializer {
+  def toEvent(o: AnyRef): EventData
+  def fromEvent(event: Event, manifest: Class[_]): AnyRef
 }
 ```
  

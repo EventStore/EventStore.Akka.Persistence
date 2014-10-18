@@ -23,15 +23,14 @@ class EventStoreSnapshotStore extends SnapshotStore with EventStorePlugin {
   def loadAsync(persistenceId: PersistenceId, criteria: SnapshotSelectionCriteria) = async {
     import Selection._
     def fold(deletes: Deletes, event: Event): Selection = {
-      val eventType = event.data.eventType
-      ClassMap.get(eventType) match {
-        case None =>
-          logNoClassFoundFor(eventType)
-          deletes
+      deserialize(event, classOf[SnapshotEvent]) match {
+        case Delete(seqNr, _) => deletes.copy(deleted = deletes.deleted + seqNr)
 
-        case Some(SnapshotClass) =>
-          val metadata = deserialize(event.data.metadata, classOf[SnapshotMetadata])
+        case DeleteCriteria(maxSeqNr, maxTimestamp) => deletes.copy(
+          minSequenceNr = math.max(deletes.minSequenceNr, maxSeqNr),
+          minTimestamp = math.max(deletes.minTimestamp, maxTimestamp))
 
+        case Snapshot(snapshot, metadata) =>
           val seqNr = metadata.sequenceNr
           val timestamp = metadata.timestamp
 
@@ -42,31 +41,18 @@ class EventStoreSnapshotStore extends SnapshotStore with EventStorePlugin {
           val acceptable = seqNr <= criteria.maxSequenceNr && timestamp <= criteria.maxTimestamp
 
           if (deleted || !acceptable) deletes
-          else {
-            val snapshot = deserialize(event.data.data, SnapshotClass)
-            Selected(SelectedSnapshot(metadata, snapshot.data))
-          }
-
-        case Some(clazz) => deserialize(event.data.data, clazz) match {
-          case Snapshot(_)      => deletes // should not happen
-          case Delete(seqNr, _) => deletes.copy(deleted = deletes.deleted + seqNr)
-          case DeleteCriteria(maxSeqNr, maxTimestamp) => deletes.copy(
-            minSequenceNr = math.max(deletes.minSequenceNr, maxSeqNr),
-            minTimestamp = math.max(deletes.minTimestamp, maxTimestamp))
-        }
+          else Selected(SelectedSnapshot(metadata, snapshot))
       }
     }
 
     val streamId = eventStream(persistenceId)
     val req = ReadStreamEvents(streamId, EventNumber.Last, maxCount = readBatchSize, direction = Backward)
-    connection.foldLeft(req, Empty) {
-      case (deletes: Deletes, event) => fold(deletes, event)
-    }.map(_.selected)
+    connection.foldLeft(req, Empty) { case (deletes: Deletes, event) => fold(deletes, event) }.map(_.selected)
   }
 
   def saveAsync(metadata: SnapshotMetadata, snapshot: Any) = asyncUnit {
     val streamId = eventStream(metadata.persistenceId)
-    connection.future(WriteEvents(streamId, List(eventData(metadata, snapshot))))
+    connection.future(WriteEvents(streamId, List(serialize(Snapshot(snapshot, metadata), Some(snapshot)))))
   }
 
   def saved(metadata: SnapshotMetadata) = {}
@@ -81,38 +67,21 @@ class EventStoreSnapshotStore extends SnapshotStore with EventStorePlugin {
       maxTimestamp = criteria.maxTimestamp))
   }
 
-  def eventData(metadata: SnapshotMetadata, snapshot: Any): EventData = EventData(
-    eventType = EventTypeMap(SnapshotClass),
-    data = serialize(Snapshot(snapshot)),
-    metadata = serialize(metadata))
-
-  def eventData(x: SnapshotEvent): EventData = EventData(
-    eventType = EventTypeMap(x.getClass),
-    data = serialize(x))
-
   def eventStream(x: PersistenceId): EventStream.Id = EventStream.Id(UrlEncoder(x) + "-snapshots")
 
   def delete(persistenceId: PersistenceId, se: DeleteEvent): Unit = {
     val streamId = eventStream(persistenceId)
-    val future = connection.future(WriteEvents(streamId, List(eventData(se))))
+    val future = connection.future(WriteEvents(streamId, List(serialize(se, None))))
     Await.result(future, deleteAwait)
   }
 }
 
 object EventStoreSnapshotStore {
-  sealed trait SnapshotEvent
+  sealed trait SnapshotEvent extends Serializable
 
   object SnapshotEvent {
-    val SnapshotClass: Class[Snapshot] = classOf[Snapshot]
-    val ClassMap: Map[String, Class[_ <: SnapshotEvent]] = Map(
-      "snapshot" -> SnapshotClass,
-      "delete" -> classOf[Delete],
-      "deleteCriteria" -> classOf[DeleteCriteria])
-
-    val EventTypeMap: Map[Class[_ <: SnapshotEvent], String] = ClassMap.map(_.swap)
-
-    @SerialVersionUID(0)
-    case class Snapshot(data: Any) extends SnapshotEvent
+    @SerialVersionUID(1)
+    case class Snapshot(data: Any, metadata: SnapshotMetadata) extends SnapshotEvent
 
     sealed trait DeleteEvent extends SnapshotEvent
 

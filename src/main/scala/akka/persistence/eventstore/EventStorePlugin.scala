@@ -3,38 +3,38 @@ package akka.persistence.eventstore
 import akka.actor.{ ActorLogging, Actor }
 import akka.serialization.{ SerializationExtension, Serialization }
 import scala.concurrent.Future
-import scala.util.{ Failure, Success, Try }
-import eventstore.{ ContentType, Content, EsConnection, EventStoreExtension }
-import akka.util.ByteString
+import scala.util.control.NonFatal
+import eventstore._
 
 trait EventStorePlugin extends ActorLogging { self: Actor =>
   val connection: EsConnection = EventStoreExtension(context.system).connection
-  private val serialization: Serialization = SerializationExtension(context.system)
+  val serialization: Serialization = SerializationExtension(context.system)
   import context.dispatcher
 
-  def deserialize[T](content: Content, clazz: Class[T]): T = {
-    serialization.deserialize(content.value.toArray, clazz).get
+  def deserialize[T](event: Event, clazz: Class[T]): T = {
+    val ser = serialization.serializerFor(clazz)
+    val res = ser match {
+      case ser: EventStoreSerializer => ser.fromEvent(event, clazz)
+      case _                         => ser.fromBinary(event.data.data.value.toArray, clazz)
+    }
+    res.asInstanceOf[T]
   }
 
-  def serialize(x: AnyRef): Content = {
-    val serializer = serialization.findSerializerFor(x)
-    val contentType = serializer match {
-      case x: EventStoreSerializer => x.contentType
-      case _                       => ContentType.Binary
+  def serialize(data: AnyRef, eventType: => Option[Any] = None): EventData = {
+    val ser = serialization.findSerializerFor(data)
+    ser match {
+      case ser: EventStoreSerializer => ser.toEvent(data)
+      case _ => EventData(
+        eventType = (eventType getOrElse data).getClass.getName,
+        data = Content(ser.toBinary(data)))
     }
-    Content(ByteString(serializer.toBinary(x)), contentType)
   }
 
   def asyncUnit(x: => Future[_]): Future[Unit] = async(x).map(_ => Unit)
 
-  def async[T](x: => Future[T]): Future[T] = Try(x) match {
-    case Success(s) => s
-    case Failure(f) => Future.failed(f)
+  def async[T](x: => Future[T]): Future[T] = try x catch {
+    case NonFatal(f) => Future.failed(f)
   }
 
   def asyncSeq[A](x: => Iterable[Future[A]]): Future[Unit] = asyncUnit(Future.sequence(x))
-
-  def logNoClassFoundFor(eventType: String): Unit = {
-    log.warning("Can't find class to deserialize eventType {}", eventType)
-  }
 }

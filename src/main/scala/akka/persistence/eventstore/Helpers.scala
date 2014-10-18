@@ -40,7 +40,7 @@ object Helpers {
       if (self == Long.MaxValue) Int.MaxValue
       else {
         if (self.isValidInt) self.toInt
-        else sys.error(s"Can't convert $self to Int")
+        else sys.error(s"Cannot convert $self to Int")
       }
   }
 
