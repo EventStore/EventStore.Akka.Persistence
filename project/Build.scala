@@ -22,12 +22,12 @@ object Build extends Build {
     val persistence = apply("persistence-experimental")
     val testkit     = apply("testkit") % "test"
 
-    private def apply(x: String) = "com.typesafe.akka" %% s"akka-$x" % "2.3.6" withSources()
+    private def apply(x: String) = "com.typesafe.akka" %% s"akka-$x" % "2.3.6"
   }
 
-  val eventstoreClient   = "com.geteventstore" %% "eventstore-client" % "1.0.1" withSources()
+  val eventstoreClient   = "com.geteventstore" %% "eventstore-client" % "1.0.1"
   val specs2             = "org.specs2" %% "specs2" % "2.3.13" % "test"
-  val persistenceTestkit = "com.github.krasserm" %% "akka-persistence-testkit" % "0.3.4" % "test" withSources()
+  val persistenceTestkit = "com.github.krasserm" %% "akka-persistence-testkit" % "0.3.4" % "test"
   val json4s             = "org.json4s" %% "json4s-native" % "3.2.10"
   val sprayJson          = "io.spray" %% "spray-json" % "1.2.6" % "test"
 
