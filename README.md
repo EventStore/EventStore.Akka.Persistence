@@ -56,7 +56,7 @@ Add to `pom.xml`
     <dependency>
         <groupId>com.geteventstore</groupId>
         <artifactId>akka-persistence-eventstore_2.11</artifactId>
-        <version>1.0.0</version>
+        <version>1.1.0</version>
     </dependency>
 ```
 
@@ -65,5 +65,5 @@ Add to `pom.xml`
 Add to `build.sbt`
 
 ```scala
-    libraryDependencies += "com.geteventstore" %% "akka-persistence-eventstore" % "1.0.0"
+    libraryDependencies += "com.geteventstore" %% "akka-persistence-eventstore" % "1.1.0"
 ```
