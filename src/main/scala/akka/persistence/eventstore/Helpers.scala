@@ -57,7 +57,7 @@ object Helpers {
 
       def loop(events: List[Event], t: T, quit: T => Future[T]): Future[T] = events match {
         case Nil     => quit(t)
-        case x :: xs => pf.lift(t, x).fold(Future.successful(t))(loop(xs, _, quit))
+        case x :: xs => pf.lift(t -> x).fold(Future.successful(t))(loop(xs, _, quit))
       }
 
       def foldLeft(from: EventNumber, t: T): Future[T] = {
