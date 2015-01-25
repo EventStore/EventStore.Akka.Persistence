@@ -1,0 +1,5 @@
+package akka.persistence.eventstore.journal
+
+import akka.persistence.journal.JournalPerfSpec
+
+class JournalPerfIntegrationSpec extends JournalIntegrationSpec with JournalPerfSpec
