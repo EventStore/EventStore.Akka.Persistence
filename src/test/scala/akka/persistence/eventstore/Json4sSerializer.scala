@@ -1,7 +1,7 @@
 package akka.persistence.eventstore
 
-import akka.actor.ExtendedActorSystem
-import akka.persistence.SnapshotMetadata
+import akka.actor.{ ActorRef, ExtendedActorSystem }
+import akka.persistence.{ PersistentRepr, SnapshotMetadata }
 import akka.persistence.eventstore.snapshot.EventStoreSnapshotStore.SnapshotEvent
 import akka.persistence.eventstore.snapshot.EventStoreSnapshotStore.SnapshotEvent.Snapshot
 import akka.util.ByteString
@@ -15,7 +15,7 @@ import eventstore.{ Content, EventData, Event, ContentType }
 class Json4sSerializer(val system: ExtendedActorSystem) extends EventStoreSerializer {
   import Json4sSerializer._
 
-  implicit val formats: Formats = DefaultFormats + SnapshotSerializer
+  implicit val formats = DefaultFormats + SnapshotSerializer + PersistentReprSerializer + ActorRefSerializer
 
   def identifier = Identifier
 
@@ -23,7 +23,7 @@ class Json4sSerializer(val system: ExtendedActorSystem) extends EventStoreSerial
 
   def fromBinary(bytes: Array[Byte], manifestOpt: Option[Class[_]]) = {
     implicit val manifest = manifestOpt match {
-      case Some(x) => Manifest.classType[AnyRef](x)
+      case Some(x) => Manifest.classType(x)
       case None    => Manifest.AnyRef
     }
     read(new String(bytes, UTF8))
@@ -32,8 +32,12 @@ class Json4sSerializer(val system: ExtendedActorSystem) extends EventStoreSerial
   def toBinary(o: AnyRef) = write(o).getBytes(UTF8)
 
   def toEvent(x: AnyRef) = x match {
+    case x: PersistentRepr => EventData(
+      eventType = classFor(x).getName,
+      data = Content(ByteString(toBinary(x)), ContentType.Json))
+
     case x: SnapshotEvent => EventData(
-      eventType = x.getClass.getName,
+      eventType = classFor(x).getName,
       data = Content(ByteString(toBinary(x)), ContentType.Json))
 
     case _ => sys.error(s"Cannot serialize $x, SnapshotEvent expected")
@@ -44,6 +48,23 @@ class Json4sSerializer(val system: ExtendedActorSystem) extends EventStoreSerial
     val result = fromBinary(event.data.data.value.toArray, clazz)
     if (manifest.isInstance(result)) result
     else sys.error(s"Cannot deserialize event as $manifest, event: $event")
+  }
+
+  def classFor(x: AnyRef) = x match {
+    case x: PersistentRepr => classOf[PersistentRepr]
+    case _                 => x.getClass
+  }
+
+  object ActorRefSerializer extends Serializer[ActorRef] {
+    val Clazz = classOf[ActorRef]
+
+    def deserialize(implicit format: Formats) = {
+      case (TypeInfo(Clazz, _), JString(x)) => system.provider.resolveActorRef(x)
+    }
+
+    def serialize(implicit format: Formats) = {
+      case x: ActorRef => JString(x.path.toSerializationFormat)
+    }
   }
 }
 
@@ -63,5 +84,22 @@ object Json4sSerializer {
     def serialize(implicit format: Formats) = {
       case Snapshot(data, metadata) => JObject("data" -> JString(data.toString), "metadata" -> decompose(metadata))
     }
+  }
+
+  object PersistentReprSerializer extends Serializer[PersistentRepr] {
+    val Clazz = classOf[PersistentRepr]
+
+    def deserialize(implicit format: Formats) = {
+      case (TypeInfo(Clazz, _), json) =>
+        val x = json.extract[Mapping]
+        PersistentRepr(x.payload, x.sequenceNr, x.persistenceId, x.deleted, sender = x.sender)
+    }
+    def serialize(implicit format: Formats) = {
+      case x: PersistentRepr =>
+        val mapping = Mapping(x.payload.asInstanceOf[String], x.sequenceNr, x.persistenceId, x.deleted, x.sender)
+        decompose(mapping)
+    }
+
+    case class Mapping(payload: String, sequenceNr: Long, persistenceId: String, deleted: Boolean, sender: ActorRef)
   }
 }
