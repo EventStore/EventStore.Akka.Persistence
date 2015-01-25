@@ -53,7 +53,7 @@ Please check out some real examples used in tests:
 Add to `build.sbt`
 
 ```scala
-    libraryDependencies += "com.geteventstore" %% "akka-persistence-eventstore" % "1.1.0"
+    libraryDependencies += "com.geteventstore" %% "akka-persistence-eventstore" % "1.1.1"
 ```
 
 * Maven:
@@ -64,6 +64,6 @@ Add to `pom.xml`
     <dependency>
         <groupId>com.geteventstore</groupId>
         <artifactId>akka-persistence-eventstore_2.11</artifactId>
-        <version>1.1.0</version>
+        <version>1.1.1</version>
     </dependency>
 ```
