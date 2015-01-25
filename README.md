@@ -1,15 +1,15 @@
-### Event Store Journal and Snapshot Store for Akka Persistence [![Build Status](https://travis-ci.org/EventStore/EventStore.Akka.Persistence.png?branch=master)](https://travis-ci.org/EventStore/EventStore.Akka.Persistence)
+### Event Store Plugin for Akka Persistence [![Build Status](https://travis-ci.org/EventStore/EventStore.Akka.Persistence.png?branch=master)](https://travis-ci.org/EventStore/EventStore.Akka.Persistence)
 
 [Akka Persistence](http://doc.akka.io/docs/akka/2.3.6/scala/persistence.html) journal and snapshot-store backed by [Event Store](http://geteventstore.com/).
 
 <table border="0">
   <tr>
     <td><a href="http://www.scala-lang.org">Scala</a> </td>
-    <td>2.10.4/2.11.2</td>
+    <td>2.10.4/2.11.5</td>
   </tr>
   <tr>
     <td><a href="http://akka.io">Akka</a> </td>
-    <td>2.3.6</td>
+    <td>2.3.9</td>
   </tr>
   <tr>
     <td><a href="https://github.com/EventStore/EventStore.JVM">eventstore-client</a> </td>
@@ -48,6 +48,14 @@ Please check out some real examples used in tests:
 
 ### Setup
 
+* Sbt
+
+Add to `build.sbt`
+
+```scala
+    libraryDependencies += "com.geteventstore" %% "akka-persistence-eventstore" % "1.1.0"
+```
+
 * Maven:
 
 Add to `pom.xml`
@@ -58,12 +66,4 @@ Add to `pom.xml`
         <artifactId>akka-persistence-eventstore_2.11</artifactId>
         <version>1.1.0</version>
     </dependency>
-```
-
-* Sbt
-
-Add to `build.sbt`
-
-```scala
-    libraryDependencies += "com.geteventstore" %% "akka-persistence-eventstore" % "1.1.0"
 ```
