@@ -66,11 +66,13 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
     asyncReplayMessages(eventNumber(from), eventNumber(to), max.toIntOrError)
   }
 
-  def asyncWriteConfirmations(cs: Seq[PersistentConfirmation]) =
-    sys.error("asyncWriteConfirmations is deprecated and not supported")
+  def asyncWriteConfirmations(cs: Seq[PersistentConfirmation]) = {
+    Future.failed(new NotImplementedError("asyncWriteConfirmations is deprecated and not supported"))
+  }
 
-  def asyncDeleteMessages(messageIds: Seq[akka.persistence.PersistentId], permanent: Boolean) =
-    sys.error("asyncDeleteMessages is deprecated and not supported")
+  def asyncDeleteMessages(messageIds: Seq[akka.persistence.PersistentId], permanent: Boolean) = {
+    Future.failed(new NotImplementedError("asyncDeleteMessages is deprecated and not supported"))
+  }
 
   def eventStream(x: PersistenceId): EventStream.Plain = EventStream(UrlEncoder(x)) match {
     case plain: EventStream.Plain => plain
