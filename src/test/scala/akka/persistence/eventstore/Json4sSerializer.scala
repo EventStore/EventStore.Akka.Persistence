@@ -48,7 +48,7 @@ class Json4sSerializer(val system: ExtendedActorSystem) extends EventStoreSerial
 }
 
 object Json4sSerializer {
-  val UTF8 = Charset.forName("UTF-8")
+  val UTF8: Charset = Charset.forName("UTF-8")
   val Identifier: Int = ByteBuffer.wrap("json4s".getBytes(UTF8)).getInt
 
   object SnapshotSerializer extends Serializer[Snapshot] {

@@ -7,7 +7,7 @@ import akka.persistence.SnapshotMetadata
 import akka.persistence.eventstore.snapshot.EventStoreSnapshotStore.SnapshotEvent
 import akka.persistence.eventstore.snapshot.EventStoreSnapshotStore.SnapshotEvent.Snapshot
 import akka.util.ByteString
-import eventstore.{ EventData, Content, Event, ContentType }
+import eventstore.{EventData, Content, Event, ContentType}
 import spray.json._
 import scala.reflect.ClassTag
 
@@ -51,7 +51,7 @@ class SprayJsonSerializer extends EventStoreSerializer {
 }
 
 object SprayJsonSerializer {
-  val UTF8 = Charset.forName("UTF-8")
+  val UTF8: Charset = Charset.forName("UTF-8")
   val Identifier: Int = ByteBuffer.wrap("spray-json".getBytes(UTF8)).getInt
 
   object JsonProtocol extends DefaultJsonProtocol {
