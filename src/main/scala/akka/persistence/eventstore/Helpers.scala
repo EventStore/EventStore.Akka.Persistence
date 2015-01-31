@@ -1,9 +1,7 @@
 package akka.persistence.eventstore
 
 import scala.concurrent.{ ExecutionContext, Future }
-import scala.PartialFunction.cond
 import eventstore._
-import eventstore.ReadStreamEventsCompleted
 
 object Helpers {
   type Timestamp = Long
@@ -29,12 +27,6 @@ object Helpers {
     case class NotLast(events: List[Event], next: EventNumber) extends Batch
   }
 
-  object StreamNotFound {
-    def unapply(x: Throwable): Boolean = cond(x) {
-      case EsException(EsError.StreamNotFound, _) => true
-    }
-  }
-
   implicit class RichLong(val self: Long) extends AnyVal {
     def toIntOrError: Int =
       if (self == Long.MaxValue) Int.MaxValue
@@ -51,7 +43,7 @@ object Helpers {
 
       def readBatch(req: ReadStreamEvents): Future[Batch] = {
         self.future(req).map(Batch(_)).recover {
-          case StreamNotFound() => Batch.Empty
+          case _: StreamNotFoundException => Batch.Empty
         }
       }
 

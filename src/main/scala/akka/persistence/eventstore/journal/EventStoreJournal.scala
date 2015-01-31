@@ -46,7 +46,7 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
     connection.future(req).map {
       case ReadEventCompleted(event) => sequenceNumber(event.number)
     } recover {
-      case StreamNotFound() => 0L
+      case _: StreamNotFoundException => 0L
     }
   }
 
@@ -91,7 +91,7 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
             (json \ DeleteTo).extract[Option[SequenceNr]] getOrElse -1L
         }
         future
-          .recover { case StreamNotFound() => -1L }
+          .recover { case _: StreamNotFoundException => -1L }
           .map { x => deleteToCache.add(persistenceId, x); x }
     }
   }
