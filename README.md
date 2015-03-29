@@ -13,7 +13,7 @@
   </tr>
   <tr>
     <td><a href="https://github.com/EventStore/EventStore.JVM">EventStore client</a> </td>
-    <td>2.0.1</td>
+    <td>2.0.2</td>
   </tr>
 </table>
 
@@ -53,7 +53,7 @@ Please check out some real examples used in tests:
 Add to `build.sbt`
 
 ```scala
-    libraryDependencies += "com.geteventstore" %% "akka-persistence-eventstore" % "2.0.0"
+    libraryDependencies += "com.geteventstore" %% "akka-persistence-eventstore" % "2.0.1"
 ```
 
 * Maven:
@@ -64,6 +64,6 @@ Add to `pom.xml`
     <dependency>
         <groupId>com.geteventstore</groupId>
         <artifactId>akka-persistence-eventstore_2.11</artifactId>
-        <version>2.0.0</version>
+        <version>2.0.1</version>
     </dependency>
 ```
