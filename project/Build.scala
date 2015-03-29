@@ -7,7 +7,7 @@ object Build extends Build {
     name                 := "akka-persistence-eventstore",
     organization         := "com.geteventstore",
     scalaVersion         := "2.11.6",
-    crossScalaVersions   := Seq("2.10.4", "2.11.6"),
+    crossScalaVersions   := Seq("2.10.5", "2.11.6"),
     licenses             := Seq("BSD 3-Clause" -> url("http://raw.github.com/EventStore/EventStore.Akka.Persistence/master/LICENSE")),
     homepage             := Some(new URL("http://github.com/EventStore/EventStore.Akka.Persistence")),
     organizationHomepage := Some(new URL("http://geteventstore.com")),
