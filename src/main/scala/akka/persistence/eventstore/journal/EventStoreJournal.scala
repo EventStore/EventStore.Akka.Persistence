@@ -1,14 +1,15 @@
 package akka.persistence.eventstore.journal
 
+import java.util.concurrent.ConcurrentHashMap
+import akka.persistence.eventstore.Helpers._
+import akka.persistence.eventstore.{ EventStorePlugin, UrlEncoder }
 import akka.persistence.journal.AsyncWriteJournal
 import akka.persistence.{ PersistentConfirmation, PersistentRepr }
-import akka.persistence.eventstore.Helpers._
-import akka.persistence.eventstore.{ UrlEncoder, EventStorePlugin }
-import scala.collection.immutable.Seq
-import scala.concurrent.Future
 import eventstore._
 import org.json4s.DefaultFormats
 import org.json4s.native.JsonMethods.parse
+import scala.collection.immutable.Seq
+import scala.concurrent.Future
 
 class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
   import EventStoreJournal._
@@ -16,16 +17,27 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
 
   val deleteToCache = new DeleteToCache()
 
-  def asyncWriteMessages(messages: Seq[PersistentRepr]) = asyncSeq {
-    messages.groupBy(_.persistenceId).map {
-      case (persistenceId, msgs) =>
-        val events = msgs.map(x => serialize(x, Some(x.payload)))
-        val expVer = msgs.head.sequenceNr - 1 match {
-          case 0L => ExpectedVersion.NoStream
-          case x  => ExpectedVersion.Exact(eventNumber(x))
+  def asyncWriteMessages(messages: Seq[PersistentRepr]) = asyncUnit {
+    def write(persistenceId: PersistenceId, messages: Seq[PersistentRepr]) = {
+      val events = messages.map(x => serialize(x, Some(x.payload)))
+      val expVer = messages.head.sequenceNr - 1 match {
+        case 0L => ExpectedVersion.NoStream
+        case x  => ExpectedVersion.Exact(eventNumber(x))
+      }
+      val req = WriteEvents(eventStream(persistenceId), events.toList, expVer)
+      connection.future(req)
+    }
+
+    val map = messages.groupBy(_.persistenceId)
+    map.size match {
+      case 0 => Future.successful(())
+      case 1 =>
+        val (persistenceId, messages) = map.head
+        write(persistenceId, messages)
+      case _ =>
+        Future.traverse(map) {
+          case (persistenceId, messages) => write(persistenceId, messages)
         }
-        val req = WriteEvents(eventStream(persistenceId), events.toList, expVer)
-        connection.future(req)
     }
   }
 
@@ -102,11 +114,14 @@ object EventStoreJournal {
   val DeleteTo = "ap-deleteTo"
 
   class DeleteToCache {
-    private var map = Map[PersistenceId, SequenceNr]()
-    def get(persistenceId: PersistenceId): Option[SequenceNr] = map.get(persistenceId)
+    private val map = new ConcurrentHashMap[PersistenceId, SequenceNr]()
 
-    def add(persistenceId: PersistenceId, sequenceNr: SequenceNr): Unit = synchronized {
-      map = map + (persistenceId -> sequenceNr)
+    def get(persistenceId: PersistenceId): Option[SequenceNr] = {
+      Option(map.get(persistenceId))
+    }
+
+    def add(persistenceId: PersistenceId, sequenceNr: SequenceNr): Unit = {
+      map.put(persistenceId, sequenceNr)
     }
   }
 }

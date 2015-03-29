@@ -1,10 +1,10 @@
 package akka.persistence.eventstore
 
-import akka.actor.{ ActorLogging, Actor }
-import akka.serialization.{ SerializationExtension, Serialization }
+import akka.actor.{ Actor, ActorLogging }
+import akka.serialization.{ Serialization, SerializationExtension }
+import eventstore._
 import scala.concurrent.Future
 import scala.util.control.NonFatal
-import eventstore._
 
 trait EventStorePlugin extends ActorLogging { self: Actor =>
   val connection: EsConnection = EventStoreExtension(context.system).connection
@@ -30,11 +30,9 @@ trait EventStorePlugin extends ActorLogging { self: Actor =>
     }
   }
 
-  def asyncUnit(x: => Future[_]): Future[Unit] = async(x).map(_ => Unit)
+  def asyncUnit(x: => Future[_]): Future[Unit] = async(x).map[Unit](_ => ())
 
   def async[T](x: => Future[T]): Future[T] = try x catch {
     case NonFatal(f) => Future.failed(f)
   }
-
-  def asyncSeq[A](x: => Iterable[Future[A]]): Future[Unit] = asyncUnit(Future.sequence(x))
 }
