@@ -1,24 +1,24 @@
 package akka.persistence.eventstore.snapshot
 
+import java.util.concurrent.TimeUnit
+import akka.persistence.eventstore.Helpers._
+import akka.persistence.eventstore.{ EventStorePlugin, UrlEncoder }
 import akka.persistence.snapshot.SnapshotStore
 import akka.persistence.{ SelectedSnapshot, SnapshotMetadata, SnapshotSelectionCriteria }
-import akka.persistence.eventstore.Helpers._
-import akka.persistence.eventstore.{ UrlEncoder, EventStorePlugin }
-import java.util.concurrent.TimeUnit
+import eventstore.ReadDirection.Backward
+import eventstore._
 import scala.concurrent.Await
 import scala.concurrent.duration._
-import com.typesafe.config.Config
-import eventstore._
-import eventstore.ReadDirection.Backward
 
 class EventStoreSnapshotStore extends SnapshotStore with EventStorePlugin {
-  import EventStoreSnapshotStore._
   import EventStoreSnapshotStore.SnapshotEvent._
+  import EventStoreSnapshotStore._
   import context.dispatcher
 
-  val config: Config = context.system.settings.config.getConfig("eventstore.persistence.snapshot-store")
   val deleteAwait: FiniteDuration = config.getDuration("delete-await", TimeUnit.MILLISECONDS).millis
   val readBatchSize: Int = config.getInt("read-batch-size")
+
+  def config = context.system.settings.config.getConfig("eventstore.persistence.snapshot-store")
 
   def loadAsync(persistenceId: PersistenceId, criteria: SnapshotSelectionCriteria) = async {
     import Selection._
@@ -67,7 +67,7 @@ class EventStoreSnapshotStore extends SnapshotStore with EventStorePlugin {
       maxTimestamp = criteria.maxTimestamp))
   }
 
-  def eventStream(x: PersistenceId): EventStream.Id = EventStream.Id(UrlEncoder(x) + "-snapshots")
+  def eventStream(x: PersistenceId): EventStream.Id = EventStream.Id(prefix + UrlEncoder(x) + "-snapshots")
 
   def delete(persistenceId: PersistenceId, se: DeleteEvent): Unit = {
     val streamId = eventStream(persistenceId)

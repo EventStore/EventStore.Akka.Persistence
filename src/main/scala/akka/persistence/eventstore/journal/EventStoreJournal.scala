@@ -17,6 +17,8 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
 
   val deleteToCache = new DeleteToCache()
 
+  def config = context.system.settings.config.getConfig("eventstore.persistence.journal")
+
   def asyncWriteMessages(messages: Seq[PersistentRepr]) = asyncUnit {
     def write(persistenceId: PersistenceId, messages: Seq[PersistentRepr]) = {
       val events = messages.map(x => serialize(x, Some(x.payload)))
@@ -86,7 +88,7 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
     Future.failed(new NotImplementedError("asyncDeleteMessages is deprecated and not supported"))
   }
 
-  def eventStream(x: PersistenceId): EventStream.Plain = EventStream(UrlEncoder(x)) match {
+  def eventStream(x: PersistenceId): EventStream.Plain = EventStream(prefix + UrlEncoder(x)) match {
     case plain: EventStream.Plain => plain
     case other                    => sys.error(s"Cannot create plain event stream for $x")
   }

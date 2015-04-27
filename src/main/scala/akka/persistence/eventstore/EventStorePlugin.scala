@@ -2,6 +2,7 @@ package akka.persistence.eventstore
 
 import akka.actor.{ Actor, ActorLogging }
 import akka.serialization.{ Serialization, SerializationExtension }
+import com.typesafe.config.Config
 import eventstore._
 import scala.concurrent.Future
 import scala.util.control.NonFatal
@@ -9,7 +10,10 @@ import scala.util.control.NonFatal
 trait EventStorePlugin extends ActorLogging { self: Actor =>
   val connection: EsConnection = EventStoreExtension(context.system).connection
   val serialization: Serialization = SerializationExtension(context.system)
+  val prefix: String = config.getString("stream-prefix")
   import context.dispatcher
+
+  def config: Config
 
   def deserialize[T](event: Event, clazz: Class[T]): T = {
     val ser = serialization.serializerFor(clazz)
