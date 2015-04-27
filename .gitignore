@@ -8,4 +8,4 @@ target
 # Mac
 .DS_Store
 
-journal/*
+/journal
