@@ -1,6 +1,6 @@
 ### Event Store Plugin for Akka Persistence [![Build Status](https://travis-ci.org/EventStore/EventStore.Akka.Persistence.svg?branch=master)](https://travis-ci.org/EventStore/EventStore.Akka.Persistence)
 
-[Akka Persistence](http://doc.akka.io/docs/akka/2.3.6/scala/persistence.html) journal and snapshot-store backed by [Event Store](http://geteventstore.com/).
+[Akka Persistence](http://doc.akka.io/docs/akka/2.3.10/scala/persistence.html) journal and snapshot-store backed by [Event Store](http://geteventstore.com/).
 
 <table border="0">
   <tr>
@@ -9,7 +9,7 @@
   </tr>
   <tr>
     <td><a href="http://akka.io">Akka</a> </td>
-    <td>2.3.9</td>
+    <td>2.3.10</td>
   </tr>
   <tr>
     <td><a href="https://github.com/EventStore/EventStore.JVM">EventStore client</a> </td>
@@ -31,7 +31,7 @@ To configure EventStore.JVM client, see it's [reference.conf](https://github.com
 ### JSON serialization
 
 Akka serializes your messages into binary data by default.
-However you can [add your own serializer](http://doc.akka.io/docs/akka/2.3.6/scala/serialization.html#Customization) to serialize as JSON,
+However you can [add your own serializer](http://doc.akka.io/docs/akka/2.3.10/scala/serialization.html#Customization) to serialize as JSON,
 But make sure you extend `akka.persistence.eventstore.EventStoreSerializer` rather then `akka.serialization.Serializer`. 
 And in case you are really going to serialize as json, please specify `ContentType.Json`, it will allow you to use projections.
  
@@ -53,7 +53,7 @@ Please check out some real examples used in tests:
 Add to `build.sbt`
 
 ```scala
-    libraryDependencies += "com.geteventstore" %% "akka-persistence-eventstore" % "2.0.1"
+    libraryDependencies += "com.geteventstore" %% "akka-persistence-eventstore" % "2.0.2"
 ```
 
 * Maven:
@@ -64,6 +64,6 @@ Add to `pom.xml`
     <dependency>
         <groupId>com.geteventstore</groupId>
         <artifactId>akka-persistence-eventstore_2.11</artifactId>
-        <version>2.0.1</version>
+        <version>2.0.2</version>
     </dependency>
 ```
