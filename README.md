@@ -1,4 +1,4 @@
-### Event Store Plugin for Akka Persistence [![Build Status](https://travis-ci.org/EventStore/EventStore.Akka.Persistence.svg?branch=master)](https://travis-ci.org/EventStore/EventStore.Akka.Persistence)
+### Event Store Plugin for Akka Persistence [![Build Status](https://travis-ci.org/EventStore/EventStore.Akka.Persistence.svg?branch=master)](https://travis-ci.org/EventStore/EventStore.Akka.Persistence) [![Version](https://img.shields.io/maven-central/v/com.geteventstore/akka-persistence-eventstore_2.11.svg?label=version)](http://search.maven.org/#search%7Cga%7C1%7Cg%3Acom.geteventstore%20AND%20akka-persistence-eventstore)
 
 [Akka Persistence](http://doc.akka.io/docs/akka/2.3.10/scala/persistence.html) journal and snapshot-store backed by [Event Store](http://geteventstore.com/).
 
@@ -45,25 +45,3 @@ trait EventStoreSerializer extends Serializer {
 Please check out some real examples used in tests:
 * [json4s](src/test/scala/akka/persistence/eventstore/Json4sSerializer.scala)
 * [spray-json](src/test/scala/akka/persistence/eventstore/SprayJsonSerializer.scala)
-
-### Setup
-
-* Sbt
-
-Add to `build.sbt`
-
-```scala
-    libraryDependencies += "com.geteventstore" %% "akka-persistence-eventstore" % "2.0.2"
-```
-
-* Maven:
-
-Add to `pom.xml`
-
-```xml
-    <dependency>
-        <groupId>com.geteventstore</groupId>
-        <artifactId>akka-persistence-eventstore_2.11</artifactId>
-        <version>2.0.2</version>
-    </dependency>
-```
