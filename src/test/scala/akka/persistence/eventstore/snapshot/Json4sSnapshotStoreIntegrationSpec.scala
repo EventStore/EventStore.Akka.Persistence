@@ -1,7 +1,6 @@
 package akka.persistence.eventstore.snapshot
 
-import com.typesafe.config.{ ConfigFactory, Config }
+import com.typesafe.config.ConfigFactory
 
-class Json4sSnapshotStoreIntegrationSpec extends SnapshotStoreIntegrationSpec {
-  override lazy val config: Config = ConfigFactory.load("json4s.conf")
-}
+class Json4sSnapshotStoreIntegrationSpec
+  extends SnapshotStoreIntegrationSpec(ConfigFactory.load("json4s.conf"))

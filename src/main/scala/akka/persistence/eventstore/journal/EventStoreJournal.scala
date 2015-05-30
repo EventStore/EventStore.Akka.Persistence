@@ -4,7 +4,7 @@ import java.util.concurrent.ConcurrentHashMap
 import akka.persistence.eventstore.Helpers._
 import akka.persistence.eventstore.{ EventStorePlugin, UrlEncoder }
 import akka.persistence.journal.AsyncWriteJournal
-import akka.persistence.{ PersistentConfirmation, PersistentRepr }
+import akka.persistence.PersistentRepr
 import eventstore._
 import org.json4s.DefaultFormats
 import org.json4s.native.JsonMethods.parse
@@ -78,14 +78,6 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
       }
     }
     asyncReplayMessages(eventNumber(from), eventNumber(to), max.toIntOrError)
-  }
-
-  def asyncWriteConfirmations(cs: Seq[PersistentConfirmation]) = {
-    Future.failed(new NotImplementedError("asyncWriteConfirmations is deprecated and not supported"))
-  }
-
-  def asyncDeleteMessages(messageIds: Seq[akka.persistence.PersistentId], permanent: Boolean) = {
-    Future.failed(new NotImplementedError("asyncDeleteMessages is deprecated and not supported"))
   }
 
   def eventStream(x: PersistenceId): EventStream.Plain = EventStream(prefix + UrlEncoder(x)) match {

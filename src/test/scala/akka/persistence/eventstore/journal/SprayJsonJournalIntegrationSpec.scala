@@ -1,7 +1,6 @@
 package akka.persistence.eventstore.journal
 
-import com.typesafe.config.{ ConfigFactory, Config }
+import com.typesafe.config.ConfigFactory
 
-class SprayJsonJournalIntegrationSpec extends JournalIntegrationSpec {
-  override lazy val config: Config = ConfigFactory.load("spray-json.conf")
-}
+class SprayJsonJournalIntegrationSpec
+  extends JournalIntegrationSpec(ConfigFactory.load("spray-json.conf"))

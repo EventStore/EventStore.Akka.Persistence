@@ -5,6 +5,4 @@ scala:
 script:
   - travis_retry sbt test
 jdk:
-  - oraclejdk7
-  - openjdk7
   - oraclejdk8

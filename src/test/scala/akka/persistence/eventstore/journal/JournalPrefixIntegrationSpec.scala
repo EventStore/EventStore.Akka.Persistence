@@ -1,7 +1,6 @@
 package akka.persistence.eventstore.journal
 
-import com.typesafe.config.{ ConfigFactory, Config }
+import com.typesafe.config.ConfigFactory
 
-class JournalPrefixIntegrationSpec extends JournalIntegrationSpec {
-  override lazy val config: Config = ConfigFactory.load("stream-prefix.conf")
-}
+class JournalPrefixIntegrationSpec
+  extends JournalIntegrationSpec(ConfigFactory.load("stream-prefix.conf"))

@@ -20,10 +20,10 @@ object Build extends Build {
 
   object Akka {
     val persistence    = apply("persistence-experimental")
-    val persistenceTck = apply("persistence-tck-experimental") % "test"
+    val persistenceTck = apply("persistence-experimental-tck") % "test"
     val testkit        = apply("testkit") % "test"
 
-    private def apply(x: String) = "com.typesafe.akka" %% s"akka-$x" % "2.3.10"
+    private def apply(x: String) = "com.typesafe.akka" %% s"akka-$x" % "2.4-M1"
   }
 
   val eventstore = "com.geteventstore" %% "eventstore-client" % "2.0.2"
