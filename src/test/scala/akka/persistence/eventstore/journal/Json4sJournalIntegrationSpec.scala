@@ -1,7 +1,6 @@
 package akka.persistence.eventstore.journal
 
-import com.typesafe.config.{ ConfigFactory, Config }
+import com.typesafe.config.ConfigFactory
 
-class Json4sJournalIntegrationSpec extends JournalIntegrationSpec {
-  override lazy val config: Config = ConfigFactory.load("json4s.conf")
-}
+class Json4sJournalIntegrationSpec
+  extends JournalIntegrationSpec(ConfigFactory.load("json4s.conf"))

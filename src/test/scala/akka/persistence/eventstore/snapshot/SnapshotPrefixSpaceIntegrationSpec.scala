@@ -1,7 +1,6 @@
 package akka.persistence.eventstore.snapshot
 
-import com.typesafe.config.{ ConfigFactory, Config }
+import com.typesafe.config.ConfigFactory
 
-class SnapshotPrefixSpaceIntegrationSpec extends SnapshotStoreIntegrationSpec {
-  override lazy val config: Config = ConfigFactory.load("stream-prefix.conf")
-}
+class SnapshotPrefixSpaceIntegrationSpec
+  extends SnapshotStoreIntegrationSpec(ConfigFactory.load("stream-prefix.conf"))

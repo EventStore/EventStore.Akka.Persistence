@@ -5,15 +5,15 @@
 <table border="0">
   <tr>
     <td><a href="http://www.scala-lang.org">Scala</a> </td>
-    <td>2.10.5/2.11.6</td>
+    <td>2.11.7</td>
   </tr>
   <tr>
     <td><a href="http://akka.io">Akka</a> </td>
-    <td>2.3.10</td>
+    <td>2.4.0</td>
   </tr>
   <tr>
     <td><a href="https://github.com/EventStore/EventStore.JVM">EventStore client</a> </td>
-    <td>2.0.2</td>
+    <td>2.1.1</td>
   </tr>
 </table>
 

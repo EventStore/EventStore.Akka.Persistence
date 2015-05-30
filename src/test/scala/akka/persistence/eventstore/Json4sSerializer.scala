@@ -1,21 +1,22 @@
 package akka.persistence.eventstore
 
+import java.nio.ByteBuffer
+import java.nio.charset.Charset
+
 import akka.actor.{ ActorRef, ExtendedActorSystem }
-import akka.persistence.{ PersistentRepr, SnapshotMetadata }
 import akka.persistence.eventstore.snapshot.EventStoreSnapshotStore.SnapshotEvent
 import akka.persistence.eventstore.snapshot.EventStoreSnapshotStore.SnapshotEvent.Snapshot
+import akka.persistence.{ PersistentRepr, SnapshotMetadata }
 import akka.util.ByteString
-import org.json4s._
+import eventstore.{ Content, ContentType, Event, EventData }
 import org.json4s.Extraction.decompose
+import org.json4s._
 import org.json4s.native.Serialization.{ read, write }
-import java.nio.charset.Charset
-import java.nio.ByteBuffer
-import eventstore.{ Content, EventData, Event, ContentType }
 
 class Json4sSerializer(val system: ExtendedActorSystem) extends EventStoreSerializer {
   import Json4sSerializer._
 
-  implicit val formats = DefaultFormats + SnapshotSerializer + PersistentReprSerializer + ActorRefSerializer
+  implicit val formats = DefaultFormats + SnapshotSerializer + new PersistentReprSerializer(system) + ActorRefSerializer
 
   def identifier = Identifier
 
@@ -86,20 +87,38 @@ object Json4sSerializer {
     }
   }
 
-  object PersistentReprSerializer extends Serializer[PersistentRepr] {
+  class PersistentReprSerializer(system: ExtendedActorSystem) extends Serializer[PersistentRepr] {
     val Clazz = classOf[PersistentRepr]
 
     def deserialize(implicit format: Formats) = {
       case (TypeInfo(Clazz, _), json) =>
         val x = json.extract[Mapping]
-        PersistentRepr(x.payload, x.sequenceNr, x.persistenceId, x.deleted, sender = x.sender)
+        PersistentRepr(
+          payload = x.payload,
+          sequenceNr = x.sequenceNr,
+          persistenceId = x.persistenceId,
+          manifest = x.manifest,
+          sender = system.provider.resolveActorRef(x.sender),
+          writerUuid = x.writerUuid)
     }
     def serialize(implicit format: Formats) = {
       case x: PersistentRepr =>
-        val mapping = Mapping(x.payload.asInstanceOf[String], x.sequenceNr, x.persistenceId, x.deleted, x.sender)
+        val mapping = Mapping(
+          payload = x.payload.asInstanceOf[String],
+          sequenceNr = x.sequenceNr,
+          persistenceId = x.persistenceId,
+          manifest = x.manifest,
+          sender = x.sender.path.toSerializationFormat,
+          writerUuid = x.writerUuid)
         decompose(mapping)
     }
 
-    case class Mapping(payload: String, sequenceNr: Long, persistenceId: String, deleted: Boolean, sender: ActorRef)
+    case class Mapping(
+      payload: String,
+      sequenceNr: Long,
+      persistenceId: String,
+      manifest: String,
+      sender: String,
+      writerUuid: String)
   }
 }

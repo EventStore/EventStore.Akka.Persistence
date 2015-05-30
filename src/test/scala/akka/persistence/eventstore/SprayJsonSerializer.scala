@@ -1,15 +1,16 @@
 package akka.persistence.eventstore
 
+import java.nio.ByteBuffer
 import java.nio.charset.Charset
 
-import java.nio.ByteBuffer
 import akka.actor.ExtendedActorSystem
-import akka.persistence.{ PersistentRepr, SnapshotMetadata }
 import akka.persistence.eventstore.snapshot.EventStoreSnapshotStore.SnapshotEvent
 import akka.persistence.eventstore.snapshot.EventStoreSnapshotStore.SnapshotEvent.Snapshot
+import akka.persistence.{ PersistentRepr, SnapshotMetadata }
 import akka.util.ByteString
-import eventstore.{ EventData, Content, Event, ContentType }
+import eventstore.{ Content, ContentType, Event, EventData }
 import spray.json._
+
 import scala.reflect.ClassTag
 
 class SprayJsonSerializer(val system: ExtendedActorSystem) extends EventStoreSerializer {
@@ -70,7 +71,7 @@ object SprayJsonSerializer {
     val SnapshotMetadataFormat = jsonFormat3(SnapshotMetadata.apply)
     val ClassFormat = Map(
       entry(jsonFormat3(SnapshotMetadata.apply)),
-      entry(jsonFormat2(SnapshotEvent.DeleteCriteria.apply)),
+      entry(jsonFormat4(SnapshotEvent.DeleteCriteria.apply)),
       entry(jsonFormat2(SnapshotEvent.Delete.apply)),
       entry(SnapshotFormat),
       entry(PersistenceReprFormat))
@@ -95,21 +96,37 @@ object SprayJsonSerializer {
 
     object PersistenceReprFormat extends JsonFormat[PersistentRepr] {
 
-      val format = jsonFormat5(Mapping.apply)
+      val format = jsonFormat6(Mapping.apply)
 
       def read(json: JsValue) = {
         val x = format.read(json)
-        val sender = system.provider.resolveActorRef(x.sender)
-        PersistentRepr(x.payload, x.sequenceNr, x.persistenceId, x.deleted, sender = sender)
+        PersistentRepr(
+          payload = x.payload,
+          sequenceNr = x.sequenceNr,
+          persistenceId = x.persistenceId,
+          manifest = x.manifest,
+          sender = system.provider.resolveActorRef(x.sender),
+          writerUuid = x.writerUuid)
       }
 
       def write(x: PersistentRepr) = {
-        val sender = x.sender.path.toSerializationFormat
-        val mapping = Mapping(x.payload.asInstanceOf[String], x.sequenceNr, x.persistenceId, x.deleted, sender)
+        val mapping = Mapping(
+          payload = x.payload.asInstanceOf[String],
+          sequenceNr = x.sequenceNr,
+          persistenceId = x.persistenceId,
+          manifest = x.manifest,
+          sender = x.sender.path.toSerializationFormat,
+          writerUuid = x.writerUuid)
         format.write(mapping)
       }
 
-      case class Mapping(payload: String, sequenceNr: Long, persistenceId: String, deleted: Boolean, sender: String)
+      case class Mapping(
+        payload: String,
+        sequenceNr: Long,
+        persistenceId: String,
+        manifest: String,
+        sender: String,
+        writerUuid: String)
     }
   }
 }
