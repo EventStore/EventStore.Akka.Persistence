@@ -92,7 +92,7 @@ object Json4sSerializer {
     def deserialize(implicit format: Formats) = {
       case (TypeInfo(Clazz, _), json) =>
         val x = json.extract[Mapping]
-        PersistentRepr(x.payload, x.sequenceNr, x.persistenceId, x.deleted, sender = x.sender)
+        PersistentRepr(x.payload, x.sequenceNr, x.persistenceId, deleted = x.deleted, sender = x.sender)
     }
     def serialize(implicit format: Formats) = {
       case x: PersistentRepr =>

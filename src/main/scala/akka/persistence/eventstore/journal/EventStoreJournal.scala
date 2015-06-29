@@ -4,12 +4,13 @@ import java.util.concurrent.ConcurrentHashMap
 import akka.persistence.eventstore.Helpers._
 import akka.persistence.eventstore.{ EventStorePlugin, UrlEncoder }
 import akka.persistence.journal.AsyncWriteJournal
-import akka.persistence.PersistentRepr
+import akka.persistence.{ AtomicWrite, PersistentRepr }
 import eventstore._
 import org.json4s.DefaultFormats
 import org.json4s.native.JsonMethods.parse
 import scala.collection.immutable.Seq
 import scala.concurrent.Future
+import scala.util.{ Failure, Success, Try }
 
 class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
   import EventStoreJournal._
@@ -19,36 +20,31 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
 
   def config = context.system.settings.config.getConfig("eventstore.persistence.journal")
 
-  def asyncWriteMessages(messages: Seq[PersistentRepr]) = asyncUnit {
-    def write(persistenceId: PersistenceId, messages: Seq[PersistentRepr]) = {
-      val events = messages.map(x => serialize(x, Some(x.payload)))
+  override def asyncWriteMessages(messages: Seq[AtomicWrite]): Future[Seq[Try[Unit]]] = {
+
+    def write(persistenceId: PersistenceId, messages: Seq[PersistentRepr]): Future[Try[Unit]] = {
       val expVer = messages.head.sequenceNr - 1 match {
         case 0L => ExpectedVersion.NoStream
         case x  => ExpectedVersion.Exact(eventNumber(x))
       }
-      val req = WriteEvents(eventStream(persistenceId), events.toList, expVer)
-      connection.future(req)
+      Try(messages.map(x => serialize(x, Some(x.payload)))) match {
+        case Success(events) =>
+          connection.future(WriteEvents(eventStream(persistenceId), events.toList, expVer)).map(_ => Success(()))
+        case Failure(ex) =>
+          Future.successful(Failure(ex))
+      }
     }
 
-    val map = messages.groupBy(_.persistenceId)
-    map.size match {
-      case 0 => Future.successful(())
-      case 1 =>
-        val (persistenceId, messages) = map.head
-        write(persistenceId, messages)
-      case _ =>
-        Future.traverse(map) {
-          case (persistenceId, messages) => write(persistenceId, messages)
-        }
-    }
+    val msgMap = messages.map(m => (m.payload.head.persistenceId, m.payload)).toMap
+    Future.traverse(msgMap) {
+      case (persistenceId, msgs) => write(persistenceId, msgs)
+    }.mapTo[Seq[Try[Unit]]]
   }
 
-  def asyncDeleteMessagesTo(persistenceId: PersistenceId, to: SequenceNr, permanent: Boolean) = asyncUnit {
-    val json =
-      if (!permanent) s"""{"$DeleteTo":$to}"""
-      else deleteToCache.get(persistenceId).fold(s"""{"$TruncateBefore":$to}""") {
-        deleteTo => s"""{"$TruncateBefore":$to,"$DeleteTo":$deleteTo}"""
-      }
+  def asyncDeleteMessagesTo(persistenceId: PersistenceId, to: SequenceNr) = asyncUnit {
+    val json = deleteToCache.get(persistenceId).fold(s"""{"$TruncateBefore":$to}""") {
+      deleteTo => s"""{"$TruncateBefore":$to,"$DeleteTo":$deleteTo}"""
+    }
     val eventData = EventData.StreamMetadata(Content.Json(json))
     val streamId = eventStream(persistenceId).metadata
     val req = WriteEvents(streamId, List(eventData))
