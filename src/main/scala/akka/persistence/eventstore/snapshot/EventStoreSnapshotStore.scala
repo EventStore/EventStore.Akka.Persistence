@@ -1,21 +1,19 @@
 package akka.persistence.eventstore.snapshot
 
-import java.util.concurrent.TimeUnit
 import akka.persistence.eventstore.Helpers._
 import akka.persistence.eventstore.{ EventStorePlugin, UrlEncoder }
 import akka.persistence.snapshot.SnapshotStore
 import akka.persistence.{ SelectedSnapshot, SnapshotMetadata, SnapshotSelectionCriteria }
 import eventstore.ReadDirection.Backward
 import eventstore._
-import scala.concurrent.Await
-import scala.concurrent.duration._
+
+import scala.concurrent.Future
 
 class EventStoreSnapshotStore extends SnapshotStore with EventStorePlugin {
   import EventStoreSnapshotStore.SnapshotEvent._
   import EventStoreSnapshotStore._
   import context.dispatcher
 
-  val deleteAwait: FiniteDuration = config.getDuration("delete-await", TimeUnit.MILLISECONDS).millis
   val readBatchSize: Int = config.getInt("read-batch-size")
 
   def config = context.system.settings.config.getConfig("eventstore.persistence.snapshot-store")
@@ -57,22 +55,21 @@ class EventStoreSnapshotStore extends SnapshotStore with EventStorePlugin {
 
   def saved(metadata: SnapshotMetadata) = {}
 
-  def delete(metadata: SnapshotMetadata) = {
-    delete(metadata.persistenceId, Delete(metadata.sequenceNr, timestamp = metadata.timestamp))
+  def deleteAsync(metadata: SnapshotMetadata): Future[Unit] = {
+    delete(metadata.persistenceId, Delete(metadata.sequenceNr, timestamp = metadata.timestamp)).map(_ => ())
   }
 
-  def delete(persistenceId: PersistenceId, criteria: SnapshotSelectionCriteria) = {
+  def deleteAsync(persistenceId: PersistenceId, criteria: SnapshotSelectionCriteria): Future[Unit] = {
     delete(persistenceId, SnapshotEvent.DeleteCriteria(
       maxSequenceNr = criteria.maxSequenceNr,
-      maxTimestamp = criteria.maxTimestamp))
+      maxTimestamp = criteria.maxTimestamp)).map(_ => ())
   }
 
   def eventStream(x: PersistenceId): EventStream.Id = EventStream.Id(prefix + UrlEncoder(x) + "-snapshots")
 
-  def delete(persistenceId: PersistenceId, se: DeleteEvent): Unit = {
+  def delete(persistenceId: PersistenceId, se: DeleteEvent): Future[WriteEventsCompleted] = {
     val streamId = eventStream(persistenceId)
-    val future = connection.future(WriteEvents(streamId, List(serialize(se, None))))
-    Await.result(future, deleteAwait)
+    connection.future(WriteEvents(streamId, List(serialize(se, None))))
   }
 }
 

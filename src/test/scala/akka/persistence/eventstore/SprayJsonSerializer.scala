@@ -100,7 +100,7 @@ object SprayJsonSerializer {
       def read(json: JsValue) = {
         val x = format.read(json)
         val sender = system.provider.resolveActorRef(x.sender)
-        PersistentRepr(x.payload, x.sequenceNr, x.persistenceId, x.deleted, sender = sender)
+        PersistentRepr(x.payload, x.sequenceNr, x.persistenceId, deleted = x.deleted, sender = sender)
       }
 
       def write(x: PersistentRepr) = {
