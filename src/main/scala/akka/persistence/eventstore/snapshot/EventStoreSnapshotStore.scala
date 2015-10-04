@@ -1,7 +1,7 @@
 package akka.persistence.eventstore.snapshot
 
 import akka.persistence.eventstore.Helpers._
-import akka.persistence.eventstore.{ EventStorePlugin, UrlEncoder }
+import akka.persistence.eventstore.EventStorePlugin
 import akka.persistence.snapshot.SnapshotStore
 import akka.persistence.{ SelectedSnapshot, SnapshotMetadata, SnapshotSelectionCriteria }
 import eventstore.ReadDirection.Backward
@@ -53,7 +53,7 @@ class EventStoreSnapshotStore extends SnapshotStore with EventStorePlugin {
     delete(persistenceId, deleteCriteria)
   }
 
-  def eventStream(x: PersistenceId): EventStream.Id = EventStream.Id(prefix + UrlEncoder(x) + "-snapshots")
+  def eventStream(x: PersistenceId): EventStream.Id = EventStream.Id(prefix + x + "-snapshots")
 
   def delete(persistenceId: PersistenceId, se: DeleteEvent): Future[Unit] = asyncUnit {
     val streamId = eventStream(persistenceId)

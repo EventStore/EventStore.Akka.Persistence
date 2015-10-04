@@ -1,7 +1,7 @@
 package akka.persistence.eventstore.journal
 
+import akka.persistence.eventstore.EventStorePlugin
 import akka.persistence.eventstore.Helpers._
-import akka.persistence.eventstore.{ EventStorePlugin, UrlEncoder }
 import akka.persistence.journal.AsyncWriteJournal
 import akka.persistence.{ AtomicWrite, PersistentRepr }
 import eventstore._
@@ -68,9 +68,9 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
     else asyncReplayMessages(eventNumber(from), eventNumber(to), max.toIntOrError)
   }
 
-  def eventStream(x: PersistenceId): EventStream.Plain = EventStream(prefix + UrlEncoder(x)) match {
-    case plain: EventStream.Plain => plain
-    case other                    => sys.error(s"Cannot create plain event stream for $x")
+  def eventStream(x: PersistenceId): EventStream.Id = EventStream(prefix + x) match {
+    case id: EventStream.Id => id
+    case other              => sys.error(s"Cannot create id event stream for $x")
   }
 }
 
