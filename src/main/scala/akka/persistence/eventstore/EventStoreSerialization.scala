@@ -22,7 +22,8 @@ case class EventStoreSerialization(serialization: Serialization) {
       case ser: EventStoreSerializer => ser.toEvent(data)
       case _ => EventData(
         eventType = (eventType getOrElse data).getClass.getName,
-        data = Content(ser.toBinary(data)))
+        data = Content(ser.toBinary(data))
+      )
     }
   }
 }

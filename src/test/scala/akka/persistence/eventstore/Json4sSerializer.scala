@@ -35,11 +35,13 @@ class Json4sSerializer(val system: ExtendedActorSystem) extends EventStoreSerial
   def toEvent(x: AnyRef) = x match {
     case x: PersistentRepr => EventData(
       eventType = classFor(x).getName,
-      data = Content(ByteString(toBinary(x)), ContentType.Json))
+      data = Content(ByteString(toBinary(x)), ContentType.Json)
+    )
 
     case x: SnapshotEvent => EventData(
       eventType = classFor(x).getName,
-      data = Content(ByteString(toBinary(x)), ContentType.Json))
+      data = Content(ByteString(toBinary(x)), ContentType.Json)
+    )
 
     case _ => sys.error(s"Cannot serialize $x, SnapshotEvent expected")
   }
@@ -99,7 +101,8 @@ object Json4sSerializer {
           persistenceId = x.persistenceId,
           manifest = x.manifest,
           sender = system.provider.resolveActorRef(x.sender),
-          writerUuid = x.writerUuid)
+          writerUuid = x.writerUuid
+        )
     }
     def serialize(implicit format: Formats) = {
       case x: PersistentRepr =>
@@ -109,16 +112,18 @@ object Json4sSerializer {
           persistenceId = x.persistenceId,
           manifest = x.manifest,
           sender = x.sender.path.toSerializationFormat,
-          writerUuid = x.writerUuid)
+          writerUuid = x.writerUuid
+        )
         decompose(mapping)
     }
 
     case class Mapping(
-      payload: String,
-      sequenceNr: Long,
+      payload:       String,
+      sequenceNr:    Long,
       persistenceId: String,
-      manifest: String,
-      sender: String,
-      writerUuid: String)
+      manifest:      String,
+      sender:        String,
+      writerUuid:    String
+    )
   }
 }

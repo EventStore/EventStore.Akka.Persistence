@@ -133,7 +133,8 @@ class EventStoreReadJournalIntegrationSpec extends ActorSpec with Matchers {
           offset = seqNr,
           persistenceId = persistenceId,
           sequenceNr = seqNr,
-          event = event)
+          event = event
+        )
       }
     }
 
