@@ -45,7 +45,8 @@ class EventStoreReadJournal(system: ExtendedActorSystem, config: Config)
         streamId,
         fromNumberExclusive = from,
         infinite = infinite,
-        resolveLinkTos = true)
+        resolveLinkTos = true
+      )
       Source(publisher)
         .takeWhile { _.record.number <= to }
         .map { x =>
@@ -54,13 +55,15 @@ class EventStoreReadJournal(system: ExtendedActorSystem, config: Config)
             offset = sequenceNr,
             persistenceId = persistenceId,
             sequenceNr = sequenceNr,
-            event = serialization.deserialize[PersistentRepr](x).payload)
+            event = serialization.deserialize[PersistentRepr](x).payload
+          )
         }
     }
 
     eventsByPersistenceId(
       if (from == 0) None else Some(eventNumber(from)),
-      if (to > Int.MaxValue) EventNumber.Last else eventNumber(to))
+      if (to > Int.MaxValue) EventNumber.Last else eventNumber(to)
+    )
   }
 
   private def persistenceIds(infinite: Boolean): Source[String, Unit] = {

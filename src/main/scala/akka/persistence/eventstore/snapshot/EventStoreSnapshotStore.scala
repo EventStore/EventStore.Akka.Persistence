@@ -49,7 +49,8 @@ class EventStoreSnapshotStore extends SnapshotStore with EventStorePlugin {
       maxSequenceNr = criteria.maxSequenceNr,
       maxTimestamp = criteria.maxTimestamp,
       minSequenceNr = criteria.minSequenceNr,
-      minTimestamp = criteria.minTimestamp)
+      minTimestamp = criteria.minTimestamp
+    )
     delete(persistenceId, deleteCriteria)
   }
 
@@ -76,9 +77,10 @@ object EventStoreSnapshotStore {
     @SerialVersionUID(1)
     case class DeleteCriteria(
       maxSequenceNr: SequenceNr,
-      maxTimestamp: Timestamp,
+      maxTimestamp:  Timestamp,
       minSequenceNr: SequenceNr,
-      minTimestamp: Timestamp) extends DeleteEvent
+      minTimestamp:  Timestamp
+    ) extends DeleteEvent
   }
 
   sealed trait Selection {
@@ -90,7 +92,8 @@ object EventStoreSnapshotStore {
 
     case class Deletes(
         snapshots: List[SnapshotEvent.Delete],
-        criteria: List[SnapshotEvent.DeleteCriteria]) extends Selection {
+        criteria:  List[SnapshotEvent.DeleteCriteria]
+    ) extends Selection {
 
       def selected = None
 

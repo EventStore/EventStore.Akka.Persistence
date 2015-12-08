@@ -50,9 +50,10 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
 
   def asyncReplayMessages(
     persistenceId: PersistenceId,
-    from: SequenceNr,
-    to: SequenceNr,
-    max: Long)(recoveryCallback: (PersistentRepr) => Unit) = asyncUnit {
+    from:          SequenceNr,
+    to:            SequenceNr,
+    max:           Long
+  )(recoveryCallback: (PersistentRepr) => Unit) = asyncUnit {
 
     def asyncReplayMessages(from: EventNumber.Exact, to: EventNumber.Exact, max: Int) = {
       val req = ReadStreamEvents(eventStream(persistenceId), from)
