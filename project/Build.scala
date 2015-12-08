@@ -32,7 +32,7 @@ object Build extends Build {
     val tck     = apply("akka-stream-tck-experimental") % "test"
     val testkit = apply("akka-stream-testkit-experimental") % "test"
 
-    private def apply(x: String) = "com.typesafe.akka" %% x % "2.0-M1"
+    private def apply(x: String) = "com.typesafe.akka" %% x % "2.0-M2"
   }
 
   val eventstore = "com.geteventstore" %% "eventstore-client" % "2.1.2"
