@@ -24,7 +24,7 @@ object Build extends Build {
     val persistenceQuery = apply("akka-persistence-query-experimental")
     val testkit =          apply("akka-testkit") % "test"
 
-    private def apply(x: String) = "com.typesafe.akka" %% x % "2.4.0"
+    private def apply(x: String) = "com.typesafe.akka" %% x % "2.4.1"
   }
 
   object AkkaStream {
@@ -32,10 +32,10 @@ object Build extends Build {
     val tck     = apply("akka-stream-tck-experimental") % "test"
     val testkit = apply("akka-stream-testkit-experimental") % "test"
 
-    private def apply(x: String) = "com.typesafe.akka" %% x % "1.0"
+    private def apply(x: String) = "com.typesafe.akka" %% x % "2.0.1"
   }
 
-  val eventstore = "com.geteventstore" %% "eventstore-client" % "2.1.1"
+  val eventstore = "com.geteventstore" %% "eventstore-client" % "2.2.0"
   val specs2     = "org.specs2" %% "specs2-core" % "2.4.15" % "test"
   val json4s     = "org.json4s" %% "json4s-native" % "3.3.0"
   val sprayJson  = "io.spray" %% "spray-json" % "1.3.2" % "test"

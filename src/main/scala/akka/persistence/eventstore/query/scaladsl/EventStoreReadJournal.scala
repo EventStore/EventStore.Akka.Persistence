@@ -46,7 +46,7 @@ class EventStoreReadJournal(system: ExtendedActorSystem, config: Config)
         fromNumberExclusive = from,
         infinite = infinite,
         resolveLinkTos = true)
-      Source(publisher)
+      Source.fromPublisher(publisher)
         .takeWhile { _.record.number <= to }
         .map { x =>
           val sequenceNr = sequenceNumber(x.record.number)
@@ -66,7 +66,7 @@ class EventStoreReadJournal(system: ExtendedActorSystem, config: Config)
   private def persistenceIds(infinite: Boolean): Source[String, Unit] = {
     val streamId = EventStream.System.`$streams`
     val publisher = connection.streamPublisher(streamId, infinite = infinite, resolveLinkTos = true)
-    Source(publisher) map { x => x.streamId.streamId }
+    Source.fromPublisher(publisher) map { x => x.streamId.streamId }
   }
 
   private def connection = EventStoreExtension(system).connection
