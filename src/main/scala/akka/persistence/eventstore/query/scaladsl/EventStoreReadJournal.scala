@@ -37,7 +37,7 @@ class EventStoreReadJournal(system: ExtendedActorSystem, config: Config)
       .named(s"currentEventsByPersistenceId-$persistenceId-$from-$to")
   }
 
-  private def eventsByPersistenceId(persistenceId: String, from: Long, to: Long, infinite: Boolean): Source[EventEnvelope, Unit] = {
+  private def eventsByPersistenceId(persistenceId: String, from: Long, to: Long, infinite: Boolean): Source[EventEnvelope, akka.NotUsed] = {
 
     def eventsByPersistenceId(from: Option[EventNumber], to: EventNumber) = {
       val streamId = EventStream.Id(persistenceId)
@@ -63,7 +63,7 @@ class EventStoreReadJournal(system: ExtendedActorSystem, config: Config)
       if (to > Int.MaxValue) EventNumber.Last else eventNumber(to))
   }
 
-  private def persistenceIds(infinite: Boolean): Source[String, Unit] = {
+  private def persistenceIds(infinite: Boolean): Source[String, akka.NotUsed] = {
     val streamId = EventStream.System.`$streams`
     val publisher = connection.streamPublisher(streamId, infinite = infinite, resolveLinkTos = true)
     Source.fromPublisher(publisher) map { x => x.streamId.streamId }
