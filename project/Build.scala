@@ -30,7 +30,7 @@ object Build extends Build {
     private def apply(x: String) = "com.typesafe.akka" %% x % "2.4.2"
   }
 
-  val eventstore = "com.geteventstore" %% "eventstore-client" % "2.2.0"
+  val eventstore = "com.geteventstore" %% "eventstore-client" % "2.2.1"
   val specs2     = "org.specs2" %% "specs2-core" % "2.4.15" % "test"
   val json4s     = "org.json4s" %% "json4s-native" % "3.3.0"
   val sprayJson  = "io.spray" %% "spray-json" % "1.3.2" % "test"
