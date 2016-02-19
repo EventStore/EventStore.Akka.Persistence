@@ -15,7 +15,7 @@ object Build extends Build {
     scalacOptions        := Seq("-encoding", "UTF-8", "-unchecked", "-deprecation", "-feature", "-Xlint"),
     resolvers            += "spray" at "http://repo.spray.io/",
     libraryDependencies ++= Seq(
-      Akka.persistence, Akka.testkit, Akka.persistenceTck, Akka.persistenceQuery, AkkaStream.testkit,
+      Akka.persistence, Akka.testkit, Akka.persistenceTck, Akka.persistenceQuery, Akka.streamTestkit,
       eventstore, specs2, json4s, sprayJson))
 
   object Akka {
@@ -24,15 +24,10 @@ object Build extends Build {
     val persistenceQuery = apply("akka-persistence-query-experimental")
     val testkit =          apply("akka-testkit") % "test"
 
-    private def apply(x: String) = "com.typesafe.akka" %% x % "2.4.1"
-  }
+    val stream  =          apply("akka-stream")
+    val streamTestkit =    apply("akka-stream-testkit") % "test"
 
-  object AkkaStream {
-    val stream  = apply("akka-stream-experimental")
-    val tck     = apply("akka-stream-tck-experimental") % "test"
-    val testkit = apply("akka-stream-testkit-experimental") % "test"
-
-    private def apply(x: String) = "com.typesafe.akka" %% x % "2.0.1"
+    private def apply(x: String) = "com.typesafe.akka" %% x % "2.4.2"
   }
 
   val eventstore = "com.geteventstore" %% "eventstore-client" % "2.2.0"
