@@ -1,19 +1,19 @@
 ### Event Store Plugin for Akka Persistence [![Build Status](https://travis-ci.org/EventStore/EventStore.Akka.Persistence.svg?branch=master)](https://travis-ci.org/EventStore/EventStore.Akka.Persistence) [![Version](https://img.shields.io/maven-central/v/com.geteventstore/akka-persistence-eventstore_2.11.svg?label=version)](http://search.maven.org/#search%7Cga%7C1%7Cg%3Acom.geteventstore%20AND%20akka-persistence-eventstore)
 
-[Akka Persistence](http://doc.akka.io/docs/akka/2.4.1/scala/persistence.html) journal and snapshot-store backed by [Event Store](http://geteventstore.com/).
+[Akka Persistence](http://doc.akka.io/docs/akka/2.4.8/scala/persistence.html) journal and snapshot-store backed by [Event Store](http://geteventstore.com/).
 
 <table border="0">
   <tr>
     <td><a href="http://www.scala-lang.org">Scala</a> </td>
-    <td>2.11.7</td>
+    <td>2.11.8</td>
   </tr>
   <tr>
     <td><a href="http://akka.io">Akka</a> </td>
-    <td>2.4.2</td>
+    <td>2.4.8</td>
   </tr>
   <tr>
     <td><a href="https://github.com/EventStore/EventStore.JVM">EventStore client</a> </td>
-    <td>2.2.1</td>
+    <td>2.2.2</td>
   </tr>
 </table>
 
