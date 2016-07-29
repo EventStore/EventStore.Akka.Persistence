@@ -8,6 +8,7 @@ import eventstore._
 
 import scala.collection.immutable.Seq
 import scala.concurrent.Future
+import scala.util.parsing.json.{ JSON, JSONObject }
 import scala.util.{ Failure, Success, Try }
 
 class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
@@ -40,11 +41,22 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
   }
 
   def asyncReadHighestSequenceNr(persistenceId: PersistenceId, from: SequenceNr) = async {
+    val stream = eventStream(persistenceId)
     val req = ReadEvent(eventStream(persistenceId), EventNumber.Last)
     (connection future req).map {
       case ReadEventCompleted(event) => sequenceNumber(event.number)
-    } recover {
-      case _: StreamNotFoundException => 0L
+    } recoverWith {
+      case _: StreamNotFoundException => Future successful 0L
+      case eventNotFound: EventNotFoundException =>
+        connection future ReadEvent.StreamMetadata(stream.metadata) map { metadata =>
+          val str = metadata.event.data.data.value.utf8String
+          val json = JSON.parseRaw(str) getOrElse sys.error(s"$persistenceId: failed to parse json: $str")
+          val map = json.asInstanceOf[JSONObject].obj
+          val tb = map.getOrElse(TruncateBefore, sys.error(s"$persistenceId: no $TruncateBefore found in $str"))
+          tb.toString.toDouble.toLong
+        } recover {
+          case e => throw e initCause eventNotFound
+        }
     }
   }
 
