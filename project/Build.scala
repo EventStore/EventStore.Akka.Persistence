@@ -6,7 +6,7 @@ object Build extends Build {
   lazy val basicSettings = Seq(
     name                 := "akka-persistence-eventstore",
     organization         := "com.geteventstore",
-    scalaVersion         := "2.11.7",
+    scalaVersion         := "2.11.8",
     licenses             := Seq("BSD 3-Clause" -> url("http://raw.github.com/EventStore/EventStore.Akka.Persistence/master/LICENSE")),
     homepage             := Some(new URL("http://github.com/EventStore/EventStore.Akka.Persistence")),
     organizationHomepage := Some(new URL("http://geteventstore.com")),
@@ -27,12 +27,12 @@ object Build extends Build {
     val stream  =          apply("akka-stream")
     val streamTestkit =    apply("akka-stream-testkit") % "test"
 
-    private def apply(x: String) = "com.typesafe.akka" %% x % "2.4.2"
+    private def apply(x: String) = "com.typesafe.akka" %% x % "2.4.8"
   }
 
-  val eventstore = "com.geteventstore" %% "eventstore-client" % "2.2.1"
+  val eventstore = "com.geteventstore" %% "eventstore-client" % "2.2.2"
   val specs2     = "org.specs2" %% "specs2-core" % "2.4.15" % "test"
-  val json4s     = "org.json4s" %% "json4s-native" % "3.3.0"
+  val json4s     = "org.json4s" %% "json4s-native" % "3.4.0"
   val sprayJson  = "io.spray" %% "spray-json" % "1.3.2" % "test"
 
   def integrationFilter(name: String): Boolean = name endsWith "IntegrationSpec"
