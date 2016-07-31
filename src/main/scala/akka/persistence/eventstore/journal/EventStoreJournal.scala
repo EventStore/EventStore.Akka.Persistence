@@ -5,10 +5,10 @@ import akka.persistence.eventstore.Helpers._
 import akka.persistence.journal.AsyncWriteJournal
 import akka.persistence.{ AtomicWrite, PersistentRepr }
 import eventstore._
+import play.api.libs.json._
 
 import scala.collection.immutable.Seq
 import scala.concurrent.Future
-import scala.util.parsing.json.{ JSON, JSONObject }
 import scala.util.{ Failure, Success, Try }
 
 class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
@@ -34,7 +34,8 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
   }
 
   def asyncDeleteMessagesTo(persistenceId: PersistenceId, to: SequenceNr) = asyncUnit {
-    val eventData = EventData.StreamMetadata(Content.Json(s"""{"$TruncateBefore":$to}"""))
+    val json = Json.obj(TruncateBefore -> to)
+    val eventData = EventData.StreamMetadata(Content.Json(json.toString()))
     val streamId = eventStream(persistenceId).metadata
     val req = WriteEvents(streamId, List(eventData))
     connection future req
@@ -48,12 +49,14 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
     } recoverWith {
       case _: StreamNotFoundException => Future successful 0L
       case eventNotFound: EventNotFoundException =>
-        connection future ReadEvent.StreamMetadata(stream.metadata) map { metadata =>
-          val str = metadata.event.data.data.value.utf8String
-          val json = JSON.parseRaw(str) getOrElse sys.error(s"$persistenceId: failed to parse json: $str")
-          val map = json.asInstanceOf[JSONObject].obj
-          val tb = map.getOrElse(TruncateBefore, sys.error(s"$persistenceId: no $TruncateBefore found in $str"))
-          tb.toString.toDouble.toLong
+        connection.getStreamMetadata(stream) map { metadata =>
+          val str = metadata.value.utf8String
+          val tb = for {
+            obj <- (Json parse str).validate[JsObject]
+            tb <- obj.value.getOrElse(TruncateBefore, JsNull).validate[Double]
+          } yield tb.toLong
+
+          tb recoverTotal { error => sys error s"$persistenceId: $error" }
         } recover {
           case e => throw e initCause eventNotFound
         }
