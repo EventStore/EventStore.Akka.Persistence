@@ -96,7 +96,7 @@ object SprayJsonSerializer {
 
     object PersistenceReprFormat extends JsonFormat[PersistentRepr] {
 
-      val format = jsonFormat6(Mapping.apply)
+      val format = jsonFormat5(Mapping.apply)
 
       def read(json: JsValue) = {
         val x = format.read(json)
@@ -105,7 +105,6 @@ object SprayJsonSerializer {
           sequenceNr = x.sequenceNr,
           persistenceId = x.persistenceId,
           manifest = x.manifest,
-          sender = system.provider.resolveActorRef(x.sender),
           writerUuid = x.writerUuid)
       }
 
@@ -115,7 +114,6 @@ object SprayJsonSerializer {
           sequenceNr = x.sequenceNr,
           persistenceId = x.persistenceId,
           manifest = x.manifest,
-          sender = x.sender.path.toSerializationFormat,
           writerUuid = x.writerUuid)
         format.write(mapping)
       }
@@ -125,7 +123,6 @@ object SprayJsonSerializer {
         sequenceNr: Long,
         persistenceId: String,
         manifest: String,
-        sender: String,
         writerUuid: String)
     }
   }

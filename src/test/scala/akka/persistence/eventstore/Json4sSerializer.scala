@@ -98,7 +98,6 @@ object Json4sSerializer {
           sequenceNr = x.sequenceNr,
           persistenceId = x.persistenceId,
           manifest = x.manifest,
-          sender = system.provider.resolveActorRef(x.sender),
           writerUuid = x.writerUuid)
     }
     def serialize(implicit format: Formats) = {
@@ -108,17 +107,15 @@ object Json4sSerializer {
           sequenceNr = x.sequenceNr,
           persistenceId = x.persistenceId,
           manifest = x.manifest,
-          sender = x.sender.path.toSerializationFormat,
           writerUuid = x.writerUuid)
         decompose(mapping)
     }
-
-    case class Mapping(
-      payload: String,
-      sequenceNr: Long,
-      persistenceId: String,
-      manifest: String,
-      sender: String,
-      writerUuid: String)
   }
+
+  case class Mapping(
+    payload: String,
+    sequenceNr: Long,
+    persistenceId: String,
+    manifest: String,
+    writerUuid: String)
 }
