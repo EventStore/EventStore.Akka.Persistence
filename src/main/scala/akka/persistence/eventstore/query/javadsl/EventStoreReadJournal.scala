@@ -8,7 +8,9 @@ class EventStoreReadJournal(readJournal: scaladsl.EventStoreReadJournal)
     with AllPersistenceIdsQuery
     with CurrentPersistenceIdsQuery
     with EventsByPersistenceIdQuery
-    with CurrentEventsByPersistenceIdQuery {
+    with CurrentEventsByPersistenceIdQuery
+    with EventsByTagQuery
+    with CurrentEventsByTagQuery {
 
   def allPersistenceIds() = {
     readJournal.allPersistenceIds().asJava
@@ -24,5 +26,13 @@ class EventStoreReadJournal(readJournal: scaladsl.EventStoreReadJournal)
 
   def currentEventsByPersistenceId(persistenceId: String, fromSequenceNr: Long, toSequenceNr: Long) = {
     readJournal.currentEventsByPersistenceId(persistenceId, fromSequenceNr, toSequenceNr).asJava
+  }
+
+  def eventsByTag(tag: String, offset: Long) = {
+    readJournal.eventsByTag(tag, offset).asJava
+  }
+
+  override def currentEventsByTag(tag: String, offset: Long) = {
+    readJournal.currentEventsByTag(tag, offset).asJava
   }
 }

@@ -15,7 +15,9 @@ class EventStoreReadJournal(system: ExtendedActorSystem, config: Config)
     with AllPersistenceIdsQuery
     with CurrentPersistenceIdsQuery
     with EventsByPersistenceIdQuery
-    with CurrentEventsByPersistenceIdQuery {
+    with CurrentEventsByPersistenceIdQuery
+    with EventsByTagQuery
+    with CurrentEventsByTagQuery {
 
   private val serialization = EventStoreSerialization(system)
 
@@ -35,6 +37,16 @@ class EventStoreReadJournal(system: ExtendedActorSystem, config: Config)
   def currentEventsByPersistenceId(persistenceId: String, from: Long, to: Long) = {
     eventsByPersistenceId(persistenceId, from, to, infinite = false)
       .named(s"currentEventsByPersistenceId-$persistenceId-$from-$to")
+  }
+
+  def eventsByTag(tag: String, offset: Long) = {
+    eventsByTag(tag, offset, infinite = true)
+      .named(s"eventsByTag-$tag")
+  }
+
+  def currentEventsByTag(tag: String, offset: Long) = {
+    eventsByTag(tag, offset, infinite = false)
+      .named(s"currentEventsByTag-$tag")
   }
 
   private def eventsByPersistenceId(persistenceId: String, from: Long, to: Long, infinite: Boolean): Source[EventEnvelope, akka.NotUsed] = {
@@ -61,6 +73,25 @@ class EventStoreReadJournal(system: ExtendedActorSystem, config: Config)
     eventsByPersistenceId(
       if (from == 0) None else Some(eventNumber(from)),
       if (to > Int.MaxValue) EventNumber.Last else eventNumber(to))
+  }
+
+  private def eventsByTag(tag: String, from: Long, infinite: Boolean): Source[EventEnvelope, akka.NotUsed] = {
+    val streamId = EventStream.System(s"ce-$tag")
+    val publisher = connection.streamPublisher(
+      streamId = streamId,
+      fromNumberExclusive = if (from == 0) None else Some(eventNumber(from)),
+      resolveLinkTos = true,
+      infinite = infinite)
+
+    Source.fromPublisher(publisher)
+      .map { x =>
+        val sequenceNr = sequenceNumber(x.record.number)
+        EventEnvelope(
+          offset = sequenceNr,
+          persistenceId = x.streamId.streamId,
+          sequenceNr = sequenceNr,
+          event = serialization.deserialize[PersistentRepr](x).payload)
+      }
   }
 
   private def persistenceIds(infinite: Boolean): Source[String, akka.NotUsed] = {

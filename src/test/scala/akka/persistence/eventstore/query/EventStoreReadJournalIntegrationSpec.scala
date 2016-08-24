@@ -112,15 +112,66 @@ class EventStoreReadJournalIntegrationSpec extends ActorSpec with Matchers {
     }
   }
 
+  "EventStore query events by tag" should {
+
+    "find existing events" in new Scope {
+      val envelopes = writeToCategory(10) take 5
+      val src = queries.eventsByTag(category, 0)
+      val probe = src.runWith(TestSink.probe[EventEnvelope])
+        .request(5)
+        .expectNextN(envelopes)
+    }
+
+    "find new events" in new Scope {
+      val src = queries.eventsByTag(category, 0)
+      val envelopes = writeToCategory(10) take 5
+      val probe = src.runWith(TestSink.probe[EventEnvelope])
+        .request(5)
+        .expectNextN(envelopes)
+    }
+  }
+
+  "EventStore query current events by tag" should {
+
+    "find events" in new Scope {
+      val envelopes = writeToCategory(5)
+      val src = queries.currentEventsByTag(category, 0)
+      val probe = src.runWith(TestSink.probe[EventEnvelope])
+        .request(5)
+        .expectNextN(envelopes)
+        .expectComplete()
+    }
+
+    "find no events" in new Scope {
+      val src = queries.currentEventsByTag(category, 0)
+      src.runWith(TestSink.probe[EventEnvelope])
+        .request(1)
+        .expectComplete()
+    }
+  }
+
   private trait Scope extends ActorScope {
 
     val persistenceId = randomId()
+    val category = randomId().replaceAllLiterally("-", "")
+    val categoryPersistenceId = s"$category-${randomId()}"
 
-    lazy val ref = system.actorOf(TestActor.props(persistenceId))
+    var testActors = Map(
+      persistenceId -> system.actorOf(TestActor.props(persistenceId)),
+      categoryPersistenceId -> system.actorOf(TestActor.props(categoryPersistenceId)))
 
     def randomId(): String = UUID.randomUUID().toString
 
     def write(n: Int): List[EventEnvelope] = {
+      write(n, persistenceId)
+    }
+
+    def writeToCategory(n: Int): List[EventEnvelope] = {
+      write(n, categoryPersistenceId)
+    }
+
+    private def write(n: Int, persistenceId: String) = {
+      val ref = testActors getOrElse (persistenceId, throw fail(s"Invalid persistenceId: $persistenceId"))
       val events = List.fill(n)(randomId())
       for { event <- events } {
         ref ! event
