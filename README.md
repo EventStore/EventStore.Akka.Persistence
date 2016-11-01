@@ -9,11 +9,11 @@
   </tr>
   <tr>
     <td><a href="http://akka.io">Akka</a> </td>
-    <td>2.4.8</td>
+    <td>2.4.11</td>
   </tr>
   <tr>
     <td><a href="https://github.com/EventStore/EventStore.JVM">EventStore client</a> </td>
-    <td>2.3.0</td>
+    <td>2.4.1</td>
   </tr>
 </table>
 

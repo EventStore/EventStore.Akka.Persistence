@@ -41,11 +41,13 @@ class SprayJsonSerializer(val system: ExtendedActorSystem) extends EventStoreSer
   def toEvent(x: AnyRef) = x match {
     case x: PersistentRepr => EventData(
       eventType = classFor(x).getName,
-      data = Content(ByteString(toBinary(x)), ContentType.Json))
+      data = Content(ByteString(toBinary(x)), ContentType.Json)
+    )
 
     case x: SnapshotEvent => EventData(
       eventType = classFor(x).getName,
-      data = Content(ByteString(toBinary(x)), ContentType.Json))
+      data = Content(ByteString(toBinary(x)), ContentType.Json)
+    )
 
     case _ => sys.error(s"Cannot serialize $x, SnapshotEvent expected")
   }
@@ -74,7 +76,8 @@ object SprayJsonSerializer {
       entry(jsonFormat4(SnapshotEvent.DeleteCriteria.apply)),
       entry(jsonFormat2(SnapshotEvent.Delete.apply)),
       entry(SnapshotFormat),
-      entry(PersistenceReprFormat))
+      entry(PersistenceReprFormat)
+    )
 
     def classFormat[T](x: Class[T]) = ClassFormat.getOrElse(x, sys.error(s"JsonFormat not found for $x"))
 
@@ -105,7 +108,8 @@ object SprayJsonSerializer {
           sequenceNr = x.sequenceNr,
           persistenceId = x.persistenceId,
           manifest = x.manifest,
-          writerUuid = x.writerUuid)
+          writerUuid = x.writerUuid
+        )
       }
 
       def write(x: PersistentRepr) = {
@@ -114,16 +118,18 @@ object SprayJsonSerializer {
           sequenceNr = x.sequenceNr,
           persistenceId = x.persistenceId,
           manifest = x.manifest,
-          writerUuid = x.writerUuid)
+          writerUuid = x.writerUuid
+        )
         format.write(mapping)
       }
 
       case class Mapping(
-        payload: String,
-        sequenceNr: Long,
+        payload:       String,
+        sequenceNr:    Long,
         persistenceId: String,
-        manifest: String,
-        writerUuid: String)
+        manifest:      String,
+        writerUuid:    String
+      )
     }
   }
 }

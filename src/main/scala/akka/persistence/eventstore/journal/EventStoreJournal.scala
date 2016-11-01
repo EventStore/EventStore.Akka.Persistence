@@ -25,7 +25,8 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
     @tailrec def writeAtomicWrites(
       messages: Iterator[AtomicWrite],
       progress: Map[String, Future[Try[Unit]]],
-      results: List[Future[Try[Unit]]]): Seq[Future[Try[Unit]]] = {
+      results:  List[Future[Try[Unit]]]
+    ): Seq[Future[Try[Unit]]] = {
 
       if (messages.isEmpty) results.reverse
       else {
@@ -39,9 +40,10 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
           } map { events =>
 
             @tailrec def writePayloads(
-              events: Iterator[Seq[EventData]],
-              previous: Future[Try[Unit]],
-              sequenceNr: Long): Future[Try[Unit]] = {
+              events:     Iterator[Seq[EventData]],
+              previous:   Future[Try[Unit]],
+              sequenceNr: Long
+            ): Future[Try[Unit]] = {
 
               if (events.isEmpty) previous
               else {
@@ -125,9 +127,10 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
 
   def asyncReplayMessages(
     persistenceId: PersistenceId,
-    from: SequenceNr,
-    to: SequenceNr,
-    max: Long)(recoveryCallback: (PersistentRepr) => Unit) = asyncUnit {
+    from:          SequenceNr,
+    to:            SequenceNr,
+    max:           Long
+  )(recoveryCallback: (PersistentRepr) => Unit) = asyncUnit {
 
     def asyncReplayMessages(from: EventNumber.Exact, to: EventNumber.Exact, max: Int) = {
       val req = ReadStreamEvents(eventStream(persistenceId), from)
