@@ -1,7 +1,7 @@
 package akka.persistence.eventstore.snapshot
 
-import akka.persistence.eventstore.Helpers._
 import akka.persistence.eventstore.EventStorePlugin
+import akka.persistence.eventstore.Helpers._
 import akka.persistence.snapshot.SnapshotStore
 import akka.persistence.{ SelectedSnapshot, SnapshotMetadata, SnapshotSelectionCriteria }
 import eventstore.ReadDirection.Backward
@@ -35,9 +35,12 @@ class EventStoreSnapshotStore extends SnapshotStore with EventStorePlugin {
     connection.foldLeft(req, Empty) { case (deletes: Deletes, event) => fold(deletes, event) }.map(_.selected)
   }
 
-  def saveAsync(metadata: SnapshotMetadata, snapshot: Any) = asyncUnit {
-    val streamId = eventStream(metadata.persistenceId)
-    connection.future(WriteEvents(streamId, List(serialization.serialize(Snapshot(snapshot, metadata), Some(snapshot)))))
+  def saveAsync(metadata: SnapshotMetadata, snapshot: Any) = async {
+    for {
+      event <- Future { serialization.serialize(Snapshot(snapshot, metadata), Some(snapshot)) }
+      streamId = eventStream(metadata.persistenceId)
+      _ <- connection(WriteEvents(streamId, List(event)))
+    } yield ()
   }
 
   def deleteAsync(metadata: SnapshotMetadata) = {
@@ -56,9 +59,12 @@ class EventStoreSnapshotStore extends SnapshotStore with EventStorePlugin {
 
   def eventStream(x: PersistenceId): EventStream.Id = EventStream.Id(prefix + x + "-snapshots")
 
-  def delete(persistenceId: PersistenceId, se: DeleteEvent): Future[Unit] = asyncUnit {
-    val streamId = eventStream(persistenceId)
-    connection.future(WriteEvents(streamId, List(serialization.serialize(se, None))))
+  def delete(persistenceId: PersistenceId, se: DeleteEvent): Future[Unit] = async {
+    for {
+      event <- Future { serialization.serialize(se, None) }
+      streamId = eventStream(persistenceId)
+      _ <- connection(WriteEvents(streamId, List(event)))
+    } yield ()
   }
 }
 

@@ -4,13 +4,13 @@ import akka.persistence.eventstore.EventStorePlugin
 import akka.persistence.eventstore.Helpers._
 import akka.persistence.journal.AsyncWriteJournal
 import akka.persistence.{ AtomicWrite, PersistentRepr }
+import akka.stream.scaladsl.Source
 import eventstore._
 import play.api.libs.json._
 
 import scala.annotation.tailrec
 import scala.collection.immutable.Seq
 import scala.concurrent.Future
-import scala.util.{ Failure, Success, Try }
 
 class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
   import EventStoreJournal._
@@ -22,68 +22,52 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
 
   def asyncWriteMessages(messages: Seq[AtomicWrite]) = {
 
-    @tailrec def writeAtomicWrites(
-      messages: Iterator[AtomicWrite],
-      progress: Map[String, Future[Try[Unit]]],
-      results:  List[Future[Try[Unit]]]
-    ): Seq[Future[Try[Unit]]] = {
+    if (messages.isEmpty) Future successful Nil
+    else Future {
+      val atomicWrite = messages.head
+      val persistenceId = atomicWrite.persistenceId
+      val seqNr = atomicWrite.lowestSequenceNr
+      val events = for {
+        atomicWrite <- messages
+        persistentRepr <- atomicWrite.payload
+      } yield serialization.serialize(persistentRepr, Some(persistentRepr.payload))
 
-      if (messages.isEmpty) results.reverse
-      else {
-        val message = messages.next()
-        val payload = message.payload
-
-        val persistenceId = message.persistenceId
-        def write: Future[Try[Unit]] = {
-          Try {
-            payload.map(x => serialization.serialize(x, Some(x.payload)))
-          } map { events =>
-
-            @tailrec def writePayloads(
-              events:     Iterator[Seq[EventData]],
-              previous:   Future[Try[Unit]],
-              sequenceNr: Long
-            ): Future[Try[Unit]] = {
-
-              if (events.isEmpty) previous
-              else {
-                val batch = events.next()
-
-                def write = {
-                  val expVer = {
-                    val expVer = sequenceNr - 1
-                    if (expVer == 0L) ExpectedVersion.NoStream else ExpectedVersion.Exact(eventNumber(expVer))
-                  }
-                  val req = WriteEvents(eventStream(persistenceId), batch.toList, expVer)
-                  (connection future req) map { _ => Success(()) } recover { case e => Failure(e) }
-                }
-
-                val result = for {
-                  previous <- previous
-                  result <- if (previous.isFailure) Future successful previous else write
-                } yield result
-
-                writePayloads(events, result, sequenceNr + batch.size)
-              }
-            }
-
-            writePayloads(events grouped writeBatchSize, Future successful Success(()), payload.head.sequenceNr)
-          } recover {
-            case e => Future successful Failure(e)
+      def writeEvents(events: Seq[EventData], seqNr: Long): Future[Nil.type] = {
+        if (events.isEmpty) Future successful Nil
+        else {
+          val expVer = {
+            val expVer = seqNr - 1
+            if (expVer == 0L) ExpectedVersion.NoStream else ExpectedVersion.Exact(eventNumber(expVer))
           }
-        }.get
-
-        val result = for {
-          previous <- progress.getOrElse(persistenceId, Future successful Success(()))
-          result <- if (previous.isFailure) Future successful previous else write
-        } yield result
-
-        writeAtomicWrites(messages, progress + (persistenceId -> result), result :: results)
+          val req = WriteEvents(eventStream(persistenceId), events.toList, expVer)
+          for { _ <- connection(req) } yield Nil
+        }
       }
-    }
 
-    val futures = writeAtomicWrites(messages.toIterator, Map(), Nil)
-    Future sequence futures
+      @tailrec def loop(
+        future:  Future[Nil.type],
+        batches: Traversable[Seq[EventData]],
+        seqNr:   Long
+      ): Future[Nil.type] = {
+
+        if (batches.isEmpty) future
+        else {
+          val events = batches.head
+          val result = for {
+            future <- future
+            result <- writeEvents(events, seqNr)
+          } yield result
+          loop(result, batches.tail, seqNr + events.size)
+        }
+      }
+
+      if (events.size <= writeBatchSize) {
+        writeEvents(events, seqNr)
+      } else {
+        val batches = events grouped writeBatchSize
+        loop(Future successful Nil, batches.toTraversable, seqNr)
+      }
+    } flatMap { identity }
   }
 
   def asyncDeleteMessagesTo(persistenceId: PersistenceId, to: SequenceNr) = {
@@ -93,7 +77,7 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
       val eventData = EventData.StreamMetadata(Content.Json(json.toString()))
       val streamId = eventStream(persistenceId).metadata
       val req = WriteEvents(streamId, List(eventData))
-      connection future req
+      connection(req)
     }
 
     if (to != Long.MaxValue) delete(to)
@@ -105,8 +89,8 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
 
   def asyncReadHighestSequenceNr(persistenceId: PersistenceId, from: SequenceNr) = async {
     val stream = eventStream(persistenceId)
-    val req = ReadEvent(eventStream(persistenceId), EventNumber.Last)
-    (connection future req).map {
+    val req = ReadEvent(stream, EventNumber.Last)
+    connection(req) map {
       case ReadEventCompleted(event) => sequenceNumber(event.number)
     } recoverWith {
       case _: StreamNotFoundException => Future successful 0L
@@ -132,23 +116,24 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
     max:           Long
   )(recoveryCallback: (PersistentRepr) => Unit) = asyncUnit {
 
-    def asyncReplayMessages(from: EventNumber.Exact, to: EventNumber.Exact, max: Int) = {
-      val req = ReadStreamEvents(eventStream(persistenceId), from)
-      connection.foldLeft(req, max) {
-        case (left, event) if event.number <= to && left > 0 =>
-          val repr = serialization.deserialize[PersistentRepr](event)
-          recoveryCallback(repr)
-          left - 1
-      }
+    def asyncReplayMessages(from: Option[EventNumber.Exact], to: EventNumber.Exact) = {
+      val streamId = eventStream(persistenceId)
+      val publisher = connection.streamPublisher(streamId, from, infinite = false)
+      val source = Source.fromPublisher(publisher)
+      source
+        .takeWhile { event => event.number <= to }
+        .take(max)
+        .runForeach { event => recoveryCallback(serialization.deserialize[PersistentRepr](event)) }
+        .map { _ => Unit }
     }
 
     if (to == 0L) Future(())
-    else asyncReplayMessages(eventNumber(from max 1), eventNumber(to), max.toIntOrError)
+    else asyncReplayMessages(if (from <= 1) None else Some(eventNumber(from - 1)), eventNumber(to))
   }
 
   def eventStream(x: PersistenceId): EventStream.Id = EventStream(prefix + x) match {
     case id: EventStream.Id => id
-    case other              => sys.error(s"Cannot create id event stream for $x")
+    case other              => sys.error(s"Cannot create EventStream.Id for $x")
   }
 }
 

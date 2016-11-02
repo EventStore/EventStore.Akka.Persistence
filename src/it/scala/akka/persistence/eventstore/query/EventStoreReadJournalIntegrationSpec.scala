@@ -27,7 +27,7 @@ class EventStoreReadJournalIntegrationSpec extends ActorSpec with Matchers {
 
       val src = queries.allPersistenceIds().filter { x => persistenceIds contains x }
       val probe = src.runWith(TestSink.probe[String])
-        .request(persistenceIds.size)
+        .request(persistenceIds.size.toLong)
         .expectNextUnorderedN(persistenceIds)
     }
   }
@@ -43,7 +43,7 @@ class EventStoreReadJournalIntegrationSpec extends ActorSpec with Matchers {
 
       val src = queries.currentPersistenceIds().filter { x => persistenceIds contains x }
       src.runWith(TestSink.probe[String])
-        .request(persistenceIds.size)
+        .request(persistenceIds.size.toLong)
         .expectNextUnorderedN(persistenceIds)
         .expectComplete()
     }
@@ -130,9 +130,9 @@ class EventStoreReadJournalIntegrationSpec extends ActorSpec with Matchers {
       for { (event, idx) <- events.zipWithIndex } yield {
         val seqNr = idx + 1
         EventEnvelope(
-          offset = seqNr,
+          offset = seqNr.toLong,
           persistenceId = persistenceId,
-          sequenceNr = seqNr,
+          sequenceNr = seqNr.toLong,
           event = event
         )
       }

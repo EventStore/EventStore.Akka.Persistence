@@ -1,7 +1,9 @@
 package akka.persistence.eventstore
 
-import scala.concurrent.{ ExecutionContext, Future }
 import eventstore._
+
+import scala.annotation.tailrec
+import scala.concurrent.{ ExecutionContext, Future }
 
 object Helpers {
   type Timestamp = Long
@@ -42,14 +44,15 @@ object Helpers {
       import Batch._
 
       def readBatch(req: ReadStreamEvents): Future[Batch] = {
-        self.future(req).map(Batch(_)).recover {
-          case _: StreamNotFoundException => Batch.Empty
-        }
+        self(req) map { Batch.apply } recover { case _: StreamNotFoundException => Batch.Empty }
       }
 
-      def loop(events: List[Event], t: T, quit: T => Future[T]): Future[T] = events match {
-        case Nil     => quit(t)
-        case x :: xs => pf.lift(t -> x).fold(Future.successful(t))(loop(xs, _, quit))
+      @tailrec def loop(events: List[Event], t: T, quit: T => Future[T]): Future[T] = events match {
+        case Nil => quit(t)
+        case x :: xs => pf.lift(t -> x) match {
+          case None    => Future successful t
+          case Some(x) => loop(xs, x, quit)
+        }
       }
 
       def foldLeft(from: EventNumber, t: T): Future[T] = {
