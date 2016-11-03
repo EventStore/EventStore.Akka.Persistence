@@ -37,23 +37,24 @@ resolvers += "spray" at "http://repo.spray.io/"
 
 val AkkaVersion = "2.4.12"
 
+lazy val IntegrationTest = config("it") extend Test
+
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-persistence" % AkkaVersion,
-  "com.typesafe.akka" %% "akka-persistence-tck" % AkkaVersion % IntegrationTest,
+  "com.typesafe.akka" %% "akka-persistence-tck" % AkkaVersion % Test,
   "com.typesafe.akka" %% "akka-persistence-query-experimental" % AkkaVersion,
-  "com.typesafe.akka" %% "akka-testkit" % AkkaVersion % IntegrationTest,
+  "com.typesafe.akka" %% "akka-testkit" % AkkaVersion % Test,
   "com.typesafe.akka" %% "akka-stream" % AkkaVersion,
-  "com.typesafe.akka" %% "akka-stream-testkit" % AkkaVersion % IntegrationTest,
+  "com.typesafe.akka" %% "akka-stream-testkit" % AkkaVersion % Test,
   "com.geteventstore" %% "eventstore-client" % "3.0.0",
-  "org.specs2" %% "specs2-core" % "3.8.5.1" % IntegrationTest,
-  "org.json4s" %% "json4s-native" % "3.4.2" % IntegrationTest,
-  "io.spray" %%  "spray-json" % "1.3.2" % IntegrationTest)
+  "org.specs2" %% "specs2-core" % "3.8.5.1" % Test,
+  "org.json4s" %% "json4s-native" % "3.4.2" % Test,
+  "io.spray" %%  "spray-json" % "1.3.2" % Test)
 
 lazy val root = (project in file("."))
   .configs(IntegrationTest)
   .settings(Defaults.itSettings: _*)
-
-parallelExecution in IntegrationTest := false
+  .settings(parallelExecution in IntegrationTest := false)
 
 pomExtra in Global := {
   <scm>
