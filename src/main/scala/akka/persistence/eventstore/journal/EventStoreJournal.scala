@@ -114,9 +114,9 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
     from:          SequenceNr,
     to:            SequenceNr,
     max:           Long
-  )(recoveryCallback: (PersistentRepr) => Unit) = asyncUnit {
+  )(recoveryCallback: (PersistentRepr) => Unit) = {
 
-    def asyncReplayMessages(from: Option[EventNumber.Exact], to: EventNumber.Exact) = {
+    def asyncReplayMessages(from: Option[EventNumber.Exact], to: EventNumber.Exact) = Future {
       val streamId = eventStream(persistenceId)
       val publisher = connection.streamPublisher(streamId, from, infinite = false)
       val source = Source.fromPublisher(publisher)
@@ -124,8 +124,8 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
         .takeWhile { event => event.number <= to }
         .take(max)
         .runForeach { event => recoveryCallback(serialization.deserialize[PersistentRepr](event)) }
-        .map { _ => Unit }
-    }
+        .map { _ => () }
+    } flatMap { identity }
 
     if (to == 0L) Future(())
     else asyncReplayMessages(if (from <= 1) None else Some(eventNumber(from - 1)), eventNumber(to))
