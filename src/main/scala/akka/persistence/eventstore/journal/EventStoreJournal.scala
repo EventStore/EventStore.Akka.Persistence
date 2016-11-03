@@ -5,7 +5,7 @@ import akka.persistence.eventstore.Helpers._
 import akka.persistence.journal.AsyncWriteJournal
 import akka.persistence.{ AtomicWrite, PersistentRepr }
 import akka.stream.scaladsl.Source
-import eventstore._
+import eventstore.{ ReadStreamEvents, _ }
 import play.api.libs.json._
 
 import scala.annotation.tailrec
@@ -19,6 +19,7 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
   def config = context.system.settings.config.getConfig("eventstore.persistence.journal")
 
   protected lazy val writeBatchSize = config.getInt("write-batch-size")
+  protected lazy val readBatchSize = config.getInt("read-batch-size")
 
   def asyncWriteMessages(messages: Seq[AtomicWrite]) = {
 
@@ -116,9 +117,9 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
     max:           Long
   )(recoveryCallback: (PersistentRepr) => Unit) = {
 
-    def asyncReplayMessages(from: Option[EventNumber.Exact], to: EventNumber.Exact) = Future {
+    def replayMany(from: Option[EventNumber.Exact], to: EventNumber.Exact) = Future {
       val streamId = eventStream(persistenceId)
-      val publisher = connection.streamPublisher(streamId, from, infinite = false)
+      val publisher = connection.streamPublisher(streamId, from, infinite = false, readBatchSize = readBatchSize)
       val source = Source.fromPublisher(publisher)
       source
         .takeWhile { event => event.number <= to }
@@ -127,8 +128,30 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
         .map { _ => () }
     } flatMap { identity }
 
-    if (to == 0L) Future(())
-    else asyncReplayMessages(if (from <= 1) None else Some(eventNumber(from - 1)), eventNumber(to))
+    def replayFew(maxCount: Long) = {
+      val streamId = eventStream(persistenceId)
+      val readStreamEvents = ReadStreamEvents(
+        streamId,
+        if (from <= 1) EventNumber.First else eventNumber(from),
+        maxCount = maxCount.toInt,
+        resolveLinkTos = settings.resolveLinkTos,
+        requireMaster = settings.requireMaster
+      )
+
+      for {
+        result <- connection(readStreamEvents)
+      } yield {
+        for { event <- result.events } recoveryCallback(serialization.deserialize[PersistentRepr](event))
+        ()
+      }
+    }
+
+    val maxCount = (to - from + 1) min max
+
+    if (to <= 0L) Future(())
+    else if (maxCount <= 0) Future(())
+    else if (maxCount <= readBatchSize) replayFew(maxCount)
+    else replayMany(if (from <= 1) None else Some(eventNumber(from - 1)), eventNumber(to))
   }
 
   def eventStream(x: PersistenceId): EventStream.Id = EventStream(prefix + x) match {
