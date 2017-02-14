@@ -6,7 +6,7 @@ import akka.persistence.journal.AsyncWriteJournal
 import akka.persistence.{ AtomicWrite, PersistentRepr }
 import akka.stream.scaladsl.Source
 import eventstore.{ ReadStreamEvents, _ }
-import play.api.libs.json._
+import spray.json._
 
 import scala.annotation.tailrec
 import scala.collection.immutable.Seq
@@ -74,8 +74,8 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
   def asyncDeleteMessagesTo(persistenceId: PersistenceId, to: SequenceNr) = {
 
     def delete(to: SequenceNr) = asyncUnit {
-      val json = Json.obj(TruncateBefore -> to.toIntOrError)
-      val eventData = EventData.StreamMetadata(Content.Json(json.toString()))
+      val json = JsObject(TruncateBefore -> JsNumber(to.toIntOrError))
+      val eventData = EventData.StreamMetadata(Content.Json(json.toString))
       val streamId = eventStream(persistenceId).metadata
       val req = WriteEvents(streamId, List(eventData))
       connection(req)
@@ -98,12 +98,18 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
       case eventNotFound: EventNotFoundException =>
         connection.getStreamMetadata(stream) map { metadata =>
           val str = metadata.value.utf8String
-          val tb = for {
-            obj <- (Json parse str).validate[JsObject]
-            tb <- obj.value.getOrElse(TruncateBefore, JsNull).validate[Double]
-          } yield tb.toLong
-
-          tb recoverTotal { error => sys error s"$persistenceId: $error" }
+          val json = str.parseJson
+          json match {
+            case JsObject(fields) if fields.isDefinedAt(TruncateBefore) =>
+              fields(TruncateBefore) match {
+                case JsNumber(value) =>
+                  value.toLong
+                case other =>
+                  deserializationError(s"$persistenceId: expected '$TruncateBefore' as numeric value, got $other")
+              }
+            case _ =>
+              deserializationError(s"$persistenceId: expected metadata as json object containing field '$TruncateBefore', got $json")
+          }
         } recover {
           case e => throw e initCause eventNotFound
         }
