@@ -13,7 +13,7 @@
   </tr>
   <tr>
     <td><a href="https://github.com/EventStore/EventStore.JVM">EventStore client</a> </td>
-    <td>3.0.7</td>
+    <td>4.0.0</td>
   </tr>
 </table>
 
