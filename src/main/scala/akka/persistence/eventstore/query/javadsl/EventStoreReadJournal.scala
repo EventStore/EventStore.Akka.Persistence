@@ -5,13 +5,13 @@ import akka.persistence.query.javadsl._
 
 class EventStoreReadJournal(readJournal: scaladsl.EventStoreReadJournal)
     extends ReadJournal
-    with AllPersistenceIdsQuery
+    with PersistenceIdsQuery
     with CurrentPersistenceIdsQuery
     with EventsByPersistenceIdQuery
     with CurrentEventsByPersistenceIdQuery {
 
-  def allPersistenceIds() = {
-    readJournal.allPersistenceIds().asJava
+  def persistenceIds() = {
+    readJournal.persistenceIds().asJava
   }
 
   def currentPersistenceIds() = {

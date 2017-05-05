@@ -6,7 +6,7 @@ import akka.actor.Props
 import akka.persistence.PersistentActor
 import akka.persistence.eventstore.ActorSpec
 import akka.persistence.eventstore.query.scaladsl.EventStoreReadJournal
-import akka.persistence.query.{ EventEnvelope, PersistenceQuery }
+import akka.persistence.query.{EventEnvelope, PersistenceQuery, Sequence}
 import akka.stream.ActorMaterializer
 import akka.stream.testkit.scaladsl.TestSink
 import org.scalatest.Matchers
@@ -25,7 +25,7 @@ class EventStoreReadJournalIntegrationSpec extends ActorSpec with Matchers {
         expectMsg(s"$persistenceId-done")
       }
 
-      val src = queries.allPersistenceIds().filter { x => persistenceIds contains x }
+      val src = queries.persistenceIds().filter { x => persistenceIds contains x }
       val probe = src.runWith(TestSink.probe[String])
         .request(persistenceIds.size.toLong)
         .expectNextUnorderedN(persistenceIds)
@@ -130,7 +130,7 @@ class EventStoreReadJournalIntegrationSpec extends ActorSpec with Matchers {
       for { (event, idx) <- events.zipWithIndex } yield {
         val seqNr = idx + 1
         EventEnvelope(
-          offset = seqNr.toLong,
+          offset = Sequence(seqNr.toLong),
           persistenceId = persistenceId,
           sequenceNr = seqNr.toLong,
           event = event

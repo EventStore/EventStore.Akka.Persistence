@@ -4,7 +4,7 @@ import akka.actor.ExtendedActorSystem
 import akka.persistence.PersistentRepr
 import akka.persistence.eventstore.EventStoreSerialization
 import akka.persistence.eventstore.Helpers._
-import akka.persistence.query.EventEnvelope
+import akka.persistence.query.{ EventEnvelope, Sequence }
 import akka.persistence.query.scaladsl._
 import akka.stream.scaladsl.Source
 import com.typesafe.config.Config
@@ -12,7 +12,7 @@ import eventstore.{ EventNumber, EventStoreExtension, EventStream }
 
 class EventStoreReadJournal(system: ExtendedActorSystem, config: Config)
     extends ReadJournal
-    with AllPersistenceIdsQuery
+    with PersistenceIdsQuery
     with CurrentPersistenceIdsQuery
     with EventsByPersistenceIdQuery
     with CurrentEventsByPersistenceIdQuery {
@@ -23,8 +23,8 @@ class EventStoreReadJournal(system: ExtendedActorSystem, config: Config)
     persistenceIds(infinite = false) named "currentPersistenceIds"
   }
 
-  def allPersistenceIds() = {
-    persistenceIds(infinite = true) named "allPersistenceIds"
+  def persistenceIds() = {
+    persistenceIds(infinite = true) named "persistenceIds"
   }
 
   def eventsByPersistenceId(persistenceId: String, from: Long, to: Long) = {
@@ -52,7 +52,7 @@ class EventStoreReadJournal(system: ExtendedActorSystem, config: Config)
         .map { x =>
           val sequenceNr = sequenceNumber(x.record.number)
           EventEnvelope(
-            offset = sequenceNr,
+            offset = Sequence(sequenceNr),
             persistenceId = persistenceId,
             sequenceNr = sequenceNr,
             event = serialization.deserialize[PersistentRepr](x).payload
