@@ -43,8 +43,8 @@ trait EventStoreSerializer extends Serializer {
 ```
  
 Please check out some real examples used in tests:
-* [json4s](src/test/scala/akka/persistence/eventstore/Json4sSerializer.scala)
-* [spray-json](src/test/scala/akka/persistence/eventstore/SprayJsonSerializer.scala)
+* [json4s](https://github.com/EventStore/EventStore.Akka.Persistence/blob/master/src/it/scala/akka/persistence/eventstore/Json4sSerializer.scala)
+* [spray-json](https://github.com/EventStore/EventStore.Akka.Persistence/blob/master/src/it/scala/akka/persistence/eventstore/SprayJsonSerializer.scala)
 
 
 ## Setup
