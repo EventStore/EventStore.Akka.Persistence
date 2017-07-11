@@ -1,40 +1,78 @@
 package akka.persistence.eventstore.query.scaladsl
 
+import akka.NotUsed
 import akka.actor.ExtendedActorSystem
+import akka.event.Logging
 import akka.persistence.PersistentRepr
 import akka.persistence.eventstore.EventStoreSerialization
 import akka.persistence.eventstore.Helpers._
-import akka.persistence.query.{ EventEnvelope, Sequence }
+import akka.persistence.query._
 import akka.persistence.query.scaladsl._
 import akka.stream.scaladsl.Source
 import com.typesafe.config.Config
-import eventstore.{ EventNumber, EventStoreExtension, EventStream }
+import eventstore.{EventNumber, EventStoreExtension, EventStream}
+
+import scala.util.control.NonFatal
 
 class EventStoreReadJournal(system: ExtendedActorSystem, config: Config)
     extends ReadJournal
     with PersistenceIdsQuery
     with CurrentPersistenceIdsQuery
     with EventsByPersistenceIdQuery
+    with EventsByTagQuery
+    with CurrentEventsByTagQuery
     with CurrentEventsByPersistenceIdQuery {
 
   private val serialization = EventStoreSerialization(system)
+  private val log = Logging.getLogger(system, getClass)
 
-  def currentPersistenceIds() = {
+  def currentPersistenceIds(): Source[String, NotUsed] = {
     persistenceIds(infinite = false) named "currentPersistenceIds"
   }
 
-  def persistenceIds() = {
+  def persistenceIds(): Source[String, NotUsed] = {
     persistenceIds(infinite = true) named "persistenceIds"
   }
 
-  def eventsByPersistenceId(persistenceId: String, from: Long, to: Long) = {
+  def eventsByPersistenceId(persistenceId: String, from: Long, to: Long): Source[EventEnvelope, NotUsed] = {
     eventsByPersistenceId(persistenceId, from, to, infinite = true)
       .named(s"eventsByPersistenceId-$persistenceId-$from-$to")
   }
 
-  def currentEventsByPersistenceId(persistenceId: String, from: Long, to: Long) = {
+  def currentEventsByPersistenceId(persistenceId: String, from: Long, to: Long): Source[EventEnvelope, NotUsed] = {
     eventsByPersistenceId(persistenceId, from, to, infinite = false)
       .named(s"currentEventsByPersistenceId-$persistenceId-$from-$to")
+  }
+
+  def eventsByTag(tag: String, offset: Offset): Source[EventEnvelope, NotUsed] = {
+    try {
+      val seqNr = toSequenceNr(offset)
+      eventsByPersistenceId(tag, seqNr, Long.MaxValue, infinite = true)
+        .named(s"eventsByTag-$tag-$seqNr")
+    } catch {
+      case NonFatal(e) =>
+        log.debug("Could not run eventsByTag [{}] query, due to: {}", tag, e.getMessage)
+        Source.failed(e)
+    }
+  }
+
+  def currentEventsByTag(tag: String, offset: Offset): Source[EventEnvelope, NotUsed] = {
+    try {
+      val seqNr = toSequenceNr(offset)
+      eventsByPersistenceId(tag, seqNr, Long.MaxValue, infinite = false)
+        .named(s"currentEventsByTag-$tag-$seqNr")
+    } catch {
+      case NonFatal(e) =>
+        log.debug("Could not run currentEventsByTag [{}] query, due to: {}", tag, e.getMessage)
+        Source.failed(e)
+    }
+  }
+
+  private def toSequenceNr(offset: Offset) = offset match {
+    case Sequence(value) => value
+    case NoOffset => 0L
+    case unsupported =>
+      throw new IllegalArgumentException("EventStore does not support " + unsupported.getClass.getName + " offsets")
   }
 
   private def eventsByPersistenceId(persistenceId: String, from: Long, to: Long, infinite: Boolean): Source[EventEnvelope, akka.NotUsed] = {
@@ -73,6 +111,7 @@ class EventStoreReadJournal(system: ExtendedActorSystem, config: Config)
   }
 
   private def connection = EventStoreExtension(system).connection
+
 }
 
 object EventStoreReadJournal {
