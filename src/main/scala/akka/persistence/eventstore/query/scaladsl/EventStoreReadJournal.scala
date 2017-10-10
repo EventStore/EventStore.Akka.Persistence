@@ -10,7 +10,7 @@ import akka.persistence.query._
 import akka.persistence.query.scaladsl._
 import akka.stream.scaladsl.Source
 import com.typesafe.config.Config
-import eventstore.{EventNumber, EventStoreExtension, EventStream}
+import eventstore.{ EventNumber, EventStoreExtension, EventStream }
 
 import scala.util.control.NonFatal
 
@@ -70,7 +70,7 @@ class EventStoreReadJournal(system: ExtendedActorSystem, config: Config)
 
   private def toSequenceNr(offset: Offset) = offset match {
     case Sequence(value) => value
-    case NoOffset => 0L
+    case NoOffset        => 0L
     case unsupported =>
       throw new IllegalArgumentException("EventStore does not support " + unsupported.getClass.getName + " offsets")
   }
@@ -100,7 +100,7 @@ class EventStoreReadJournal(system: ExtendedActorSystem, config: Config)
 
     eventsByPersistenceId(
       if (from == 0) None else Some(eventNumber(from)),
-      if (to > Int.MaxValue) EventNumber.Last else eventNumber(to)
+      if (to >= Long.MaxValue) EventNumber.Last else eventNumber(to)
     )
   }
 

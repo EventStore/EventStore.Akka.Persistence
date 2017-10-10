@@ -6,9 +6,9 @@ name := "akka-persistence-eventstore"
 
 organization := "com.geteventstore"
 
-scalaVersion := "2.12.2"
+scalaVersion := "2.12.3"
 
-crossScalaVersions := Seq("2.12.2", "2.11.11")
+crossScalaVersions := Seq("2.12.3", "2.11.11")
 
 releaseCrossBuild := true
 
@@ -39,7 +39,7 @@ scalacOptions in(Compile, doc) ++= Seq("-groups", "-implicits", "-no-link-warnin
 
 resolvers += "spray" at "http://repo.spray.io/"
 
-val AkkaVersion = "2.5.1"
+val AkkaVersion = "2.5.6"
 
 lazy val IntegrationTest = config("it") extend Test
 
@@ -50,7 +50,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-testkit" % AkkaVersion % Test,
   "com.typesafe.akka" %% "akka-stream" % AkkaVersion,
   "com.typesafe.akka" %% "akka-stream-testkit" % AkkaVersion % Test,
-  "com.geteventstore" %% "eventstore-client" % "4.1.0",
+  "com.geteventstore" %% "eventstore-client" % "5.0.0",
   "org.specs2" %% "specs2-core" % "3.8.9" % Test,
   "org.json4s" %% "json4s-native" % "3.4.2" % Test,
   "io.spray" %%  "spray-json" % "1.3.3")

@@ -10,9 +10,9 @@ object Helpers {
   type PersistenceId = String
   type SequenceNr = Long
 
-  def eventNumber(x: SequenceNr): EventNumber.Exact = EventNumber.Exact(x.toIntOrError - 1)
+  def eventNumber(x: SequenceNr): EventNumber.Exact = EventNumber.Exact(x - 1)
 
-  def sequenceNumber(x: EventNumber.Exact): SequenceNr = x.value.toLong + 1
+  def sequenceNumber(x: EventNumber.Exact): SequenceNr = x.value + 1
 
   sealed trait Batch {
     def events: List[Event]
@@ -27,15 +27,6 @@ object Helpers {
 
     case class Last(events: List[Event]) extends Batch
     case class NotLast(events: List[Event], next: EventNumber) extends Batch
-  }
-
-  implicit class RichLong(val self: Long) extends AnyVal {
-    def toIntOrError: Int =
-      if (self == Long.MaxValue) Int.MaxValue
-      else {
-        if (self.isValidInt) self.toInt
-        else sys.error(s"Cannot convert $self to Int")
-      }
   }
 
   implicit class RichConnection(val self: EsConnection) extends AnyVal {

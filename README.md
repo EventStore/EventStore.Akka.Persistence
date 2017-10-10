@@ -5,15 +5,15 @@
 <table border="0">
   <tr>
     <td><a href="http://www.scala-lang.org">Scala</a> </td>
-    <td>2.12.2/2.11.11</td>
+    <td>2.12.3/2.11.11</td>
   </tr>
   <tr>
     <td><a href="http://akka.io">Akka</a> </td>
-    <td>2.5.1</td>
+    <td>2.5.6</td>
   </tr>
   <tr>
     <td><a href="https://github.com/EventStore/EventStore.JVM">EventStore client</a> </td>
-    <td>4.1.0</td>
+    <td>5.0.0</td>
   </tr>
 </table>
 
@@ -31,7 +31,7 @@ To configure EventStore.JVM client, see it's [reference.conf](https://github.com
 ### JSON serialization
 
 Akka serializes your messages into binary data by default.
-However you can [add your own serializer](http://doc.akka.io/docs/akka/2.5.1/scala/serialization.html#Customization) to serialize as JSON,
+However you can [add your own serializer](http://doc.akka.io/docs/akka/2.5.6/scala/serialization.html#Customization) to serialize as JSON,
 But make sure you extend `akka.persistence.eventstore.EventStoreSerializer` rather then `akka.serialization.Serializer`. 
 And in case you are really going to serialize as json, please specify `ContentType.Json`, it will allow you to use projections.
  
