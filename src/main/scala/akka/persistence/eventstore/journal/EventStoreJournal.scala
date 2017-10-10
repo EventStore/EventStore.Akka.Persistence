@@ -74,7 +74,7 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
   def asyncDeleteMessagesTo(persistenceId: PersistenceId, to: SequenceNr) = {
 
     def delete(to: SequenceNr) = asyncUnit {
-      val json = JsObject(TruncateBefore -> JsNumber(to.toIntOrError))
+      val json = JsObject(TruncateBefore -> JsNumber(to))
       val eventData = EventData.StreamMetadata(Content.Json(json.toString))
       val streamId = eventStream(persistenceId).metadata
       val req = WriteEvents(streamId, List(eventData))
