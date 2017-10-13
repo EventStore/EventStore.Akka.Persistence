@@ -51,7 +51,7 @@ Please check out some real examples used in tests:
 
 #### Sbt
 ```scala
-libraryDependencies += "com.geteventstore" %% "akka-persistence-eventstore" % "4.1.0"
+libraryDependencies += "com.geteventstore" %% "akka-persistence-eventstore" % "5.0.1"
 ```
 
 #### Maven
@@ -59,6 +59,6 @@ libraryDependencies += "com.geteventstore" %% "akka-persistence-eventstore" % "4
 <dependency>
     <groupId>com.geteventstore</groupId>
     <artifactId>akka-persistence-eventstore_${scala.version}</artifactId>
-    <version>4.1.0</version>
+    <version>5.0.1</version>
 </dependency>
 ```
