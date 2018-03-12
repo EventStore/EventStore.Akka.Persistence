@@ -1,8 +1,23 @@
 language: scala
 scala:
-  - 2.12.3
-  - 2.11.11
+  - 2.12.4
+  - 2.11.12
+
+env:
+  global:
+    - AKKA_TEST_TIMEFACTOR=2.0
+
+sudo: required
+
+services:
+  - docker
+
+before_install:
+  - docker pull eventstore/eventstore
+  - docker run -d --rm --name eventstore-node -it -p 2113:2113 -p 1113:1113 -e EVENTSTORE_START_STANDARD_PROJECTIONS=True eventstore/eventstore
+
 script:
-  - travis_retry sbt test
+  - travis_retry sbt test it:test
+
 jdk:
   - oraclejdk8

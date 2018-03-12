@@ -1,7 +1,7 @@
 package akka.persistence.eventstore.query
 
 import java.util.UUID
-
+import scala.concurrent.duration._
 import akka.actor.Props
 import akka.persistence.PersistentActor
 import akka.persistence.eventstore.ActorSpec
@@ -14,16 +14,19 @@ import org.scalatest.Matchers
 class EventStoreReadJournalIntegrationSpec extends ActorSpec with Matchers {
   implicit val materializer = ActorMaterializer()
 
-  val queries = PersistenceQuery(system).readJournalFor[EventStoreReadJournal](EventStoreReadJournal.Identifier)
+  def queries = PersistenceQuery(system).
+    readJournalFor[EventStoreReadJournal](EventStoreReadJournal.Identifier)
+
   "EventStore query persistence ids" should {
 
     "find persistence ids" in new Scope {
-
-      val persistenceIds = List.fill(5)(randomId())
+      val persistenceIds = List.fill(5)(randomId("find_all_"))
       for { persistenceId <- persistenceIds } {
         system.actorOf(TestActor.props(persistenceId)) ! persistenceId
         expectMsg(s"$persistenceId-done")
       }
+
+      expectNoMessage(100.millis) // Give ES some time to write to $streams
 
       val src = queries.persistenceIds().filter { x => persistenceIds contains x }
       val probe = src.runWith(TestSink.probe[String])
@@ -35,11 +38,13 @@ class EventStoreReadJournalIntegrationSpec extends ActorSpec with Matchers {
   "EventStore query current persistence ids" should {
 
     "find persistence ids" in new Scope {
-      val persistenceIds = List.fill(5)(randomId())
+      val persistenceIds = List.fill(5)(randomId("find_current_"))
       for { persistenceId <- persistenceIds } {
         system.actorOf(TestActor.props(persistenceId)) ! persistenceId
         expectMsg(s"$persistenceId-done")
       }
+
+      expectNoMessage(100.millis) // Give ES some time to write to $streams
 
       val src = queries.currentPersistenceIds().filter { x => persistenceIds contains x }
       src.runWith(TestSink.probe[String])
@@ -118,7 +123,7 @@ class EventStoreReadJournalIntegrationSpec extends ActorSpec with Matchers {
 
     lazy val ref = system.actorOf(TestActor.props(persistenceId))
 
-    def randomId(): String = UUID.randomUUID().toString
+    def randomId(prefix: String = ""): String = s"$prefix${UUID.randomUUID()}"
 
     def write(n: Int): List[EventEnvelope] = {
       val events = List.fill(n)(randomId())
