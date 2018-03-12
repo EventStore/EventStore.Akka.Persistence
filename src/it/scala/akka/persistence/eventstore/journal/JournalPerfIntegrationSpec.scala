@@ -7,5 +7,8 @@ import scala.concurrent.duration._
 
 class JournalPerfIntegrationSpec extends JournalPerfSpec(ConfigFactory.load()) with EventStorePluginSpec {
 
+  override def awaitDurationMillis: Long = 30.seconds.toMillis
+  override def eventsCount: Int = 2500
+
   def supportsRejectingNonSerializableObjects = false
 }
