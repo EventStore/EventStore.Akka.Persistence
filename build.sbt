@@ -1,14 +1,10 @@
-import com.typesafe.sbt.SbtScalariform.ScalariformKeys
-
-import scalariform.formatter.preferences._
-
 name := "akka-persistence-eventstore"
 
 organization := "com.geteventstore"
 
-scalaVersion := "2.12.3"
+scalaVersion := crossScalaVersions.value.last
 
-crossScalaVersions := Seq("2.12.3", "2.11.11")
+crossScalaVersions := Seq("2.11.12", "2.12.6")
 
 releaseCrossBuild := true
 
@@ -39,7 +35,7 @@ scalacOptions in(Compile, doc) ++= Seq("-groups", "-implicits", "-no-link-warnin
 
 resolvers += "spray" at "http://repo.spray.io/"
 
-val AkkaVersion = "2.5.6"
+val AkkaVersion = "2.5.13"
 
 lazy val IntegrationTest = config("it") extend Test
 
@@ -50,10 +46,10 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-testkit" % AkkaVersion % Test,
   "com.typesafe.akka" %% "akka-stream" % AkkaVersion,
   "com.typesafe.akka" %% "akka-stream-testkit" % AkkaVersion % Test,
-  "com.geteventstore" %% "eventstore-client" % "5.0.1",
-  "org.specs2" %% "specs2-core" % "3.8.9" % Test,
-  "org.json4s" %% "json4s-native" % "3.4.2" % Test,
-  "io.spray" %%  "spray-json" % "1.3.3")
+  "com.geteventstore" %% "eventstore-client" % "5.0.7",
+  "org.specs2" %% "specs2-core" % "3.10.0" % Test,
+  "org.json4s" %% "json4s-native" % "3.5.4" % Test,
+  "io.spray" %%  "spray-json" % "1.3.4")
 
 lazy val root = (project in file("."))
   .configs(IntegrationTest)
@@ -77,9 +73,4 @@ pomExtra in Global := {
 
 releasePublishArtifactsAction := PgpKeys.publishSigned.value
 
-SbtScalariform.scalariformSettings
-
-ScalariformKeys.preferences := ScalariformKeys.preferences.value
-  .setPreference(AlignParameters, true)
-  .setPreference(AlignSingleLineCaseStatements, true)
-  .setPreference(DoubleIndentClassDeclaration, true)
+publishTo := sonatypePublishTo.value
