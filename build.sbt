@@ -4,7 +4,7 @@ organization := "com.geteventstore"
 
 scalaVersion := crossScalaVersions.value.last
 
-crossScalaVersions := Seq("2.11.12", "2.12.6")
+crossScalaVersions := Seq("2.11.12", "2.12.8")
 
 releaseCrossBuild := true
 
@@ -35,7 +35,7 @@ scalacOptions in(Compile, doc) ++= Seq("-groups", "-implicits", "-no-link-warnin
 
 resolvers += "spray" at "http://repo.spray.io/"
 
-val AkkaVersion = "2.5.13"
+val AkkaVersion = "2.5.19"
 
 lazy val IntegrationTest = config("it") extend Test
 
@@ -49,7 +49,7 @@ libraryDependencies ++= Seq(
   "com.geteventstore" %% "eventstore-client" % "5.0.7",
   "org.specs2" %% "specs2-core" % "3.10.0" % Test,
   "org.json4s" %% "json4s-native" % "3.5.4" % Test,
-  "io.spray" %%  "spray-json" % "1.3.4")
+  "io.spray" %%  "spray-json" % "1.3.5")
 
 lazy val root = (project in file("."))
   .configs(IntegrationTest)
