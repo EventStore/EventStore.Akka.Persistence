@@ -79,13 +79,11 @@ class EventStoreReadJournal(system: ExtendedActorSystem, config: Config)
 
     def eventsByPersistenceId(from: Option[EventNumber], to: EventNumber) = {
       val streamId = EventStream.Id(persistenceId)
-      val publisher = connection.streamPublisher(
+      connection.streamSource(
         streamId,
-        fromNumberExclusive = from,
+        fromEventNumberExclusive = from,
         infinite = infinite,
-        resolveLinkTos = true
-      )
-      Source.fromPublisher(publisher)
+        resolveLinkTos = true)
         .takeWhile { _.record.number <= to }
         .map { x =>
           val sequenceNr = sequenceNumber(x.record.number)
@@ -106,8 +104,9 @@ class EventStoreReadJournal(system: ExtendedActorSystem, config: Config)
 
   private def persistenceIds(infinite: Boolean): Source[String, akka.NotUsed] = {
     val streamId = EventStream.System.`$streams`
-    val publisher = connection.streamPublisher(streamId, infinite = infinite, resolveLinkTos = true)
-    Source.fromPublisher(publisher) map { x => x.streamId.streamId }
+    connection
+      .streamSource(streamId, infinite = infinite, resolveLinkTos = true)
+      .map { x => x.streamId.streamId }
   }
 
   private def connection = EventStoreExtension(system).connection

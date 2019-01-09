@@ -46,9 +46,9 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-testkit" % AkkaVersion % Test,
   "com.typesafe.akka" %% "akka-stream" % AkkaVersion,
   "com.typesafe.akka" %% "akka-stream-testkit" % AkkaVersion % Test,
-  "com.geteventstore" %% "eventstore-client" % "5.0.7",
+  "com.geteventstore" %% "eventstore-client" % "5.0.8",
   "org.specs2" %% "specs2-core" % "3.10.0" % Test,
-  "org.json4s" %% "json4s-native" % "3.5.4" % Test,
+  "org.json4s" %% "json4s-native" % "3.6.3" % Test,
   "io.spray" %%  "spray-json" % "1.3.5")
 
 lazy val root = (project in file("."))

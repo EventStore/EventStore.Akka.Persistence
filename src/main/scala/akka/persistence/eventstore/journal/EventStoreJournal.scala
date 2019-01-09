@@ -125,9 +125,7 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
 
     def replayMany(from: Option[EventNumber.Exact], to: EventNumber.Exact) = Future {
       val streamId = eventStream(persistenceId)
-      val publisher = connection.streamPublisher(streamId, from, infinite = false, readBatchSize = readBatchSize)
-      val source = Source.fromPublisher(publisher)
-      source
+      connection.streamSource(streamId, from, infinite = false, readBatchSize = readBatchSize)
         .takeWhile { event => event.number <= to }
         .take(max)
         .runForeach { event => recoveryCallback(serialization.deserialize[PersistentRepr](event)) }
