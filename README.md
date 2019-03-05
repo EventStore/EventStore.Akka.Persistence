@@ -1,6 +1,6 @@
 ### Event Store Plugin for Akka Persistence [![Build Status](https://travis-ci.org/EventStore/EventStore.Akka.Persistence.svg?branch=master)](https://travis-ci.org/EventStore/EventStore.Akka.Persistence) [![Version](https://img.shields.io/maven-central/v/com.geteventstore/akka-persistence-eventstore_2.11.svg?label=version)](http://search.maven.org/#search%7Cga%7C1%7Cg%3Acom.geteventstore%20AND%20akka-persistence-eventstore)
 
-[Akka Persistence](http://doc.akka.io/docs/akka/2.5.1/scala/persistence.html) journal and snapshot-store backed by [Event Store](http://geteventstore.com/).
+[Akka Persistence](http://doc.akka.io/docs/akka/2.5.21/scala/persistence.html) journal and snapshot-store backed by [Event Store](http://geteventstore.com/).
 
 <table border="0">
   <tr>
@@ -9,11 +9,11 @@
   </tr>
   <tr>
     <td><a href="http://akka.io">Akka</a> </td>
-    <td>2.5.19</td>
+    <td>2.5.21</td>
   </tr>
   <tr>
     <td><a href="https://github.com/EventStore/EventStore.JVM">EventStore client</a> </td>
-    <td>5.0.9</td>
+    <td>6.0.0</td>
   </tr>
 </table>
 
@@ -31,7 +31,7 @@ To configure EventStore.JVM client, see it's [reference.conf](https://github.com
 ### JSON serialization
 
 Akka serializes your messages into binary data by default.
-However you can [add your own serializer](http://doc.akka.io/docs/akka/2.5.6/scala/serialization.html#Customization) to serialize as JSON,
+However you can [add your own serializer](http://doc.akka.io/docs/akka/2.5.21/scala/serialization.html#Customization) to serialize as JSON,
 But make sure you extend `akka.persistence.eventstore.EventStoreSerializer` rather then `akka.serialization.Serializer`. 
 And in case you are really going to serialize as json, please specify `ContentType.Json`, it will allow you to use projections.
  
@@ -51,7 +51,7 @@ Please check out some real examples used in tests:
 
 #### Sbt
 ```scala
-libraryDependencies += "com.geteventstore" %% "akka-persistence-eventstore" % "5.0.4"
+libraryDependencies += "com.geteventstore" %% "akka-persistence-eventstore" % "6.0.0"
 ```
 
 #### Maven
@@ -59,6 +59,6 @@ libraryDependencies += "com.geteventstore" %% "akka-persistence-eventstore" % "5
 <dependency>
     <groupId>com.geteventstore</groupId>
     <artifactId>akka-persistence-eventstore_${scala.version}</artifactId>
-    <version>5.0.4</version>
+    <version>6.0.0</version>
 </dependency>
 ```
