@@ -3,14 +3,14 @@ package akka.persistence.eventstore
 import akka.actor.{ Actor, ActorLogging }
 import akka.stream.ActorMaterializer
 import com.typesafe.config.Config
-import eventstore._
-import eventstore.tcp.ConnectionActor
-
+import eventstore.akka.Settings
+import eventstore.akka._
+import eventstore.akka.tcp.ConnectionActor
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 trait EventStorePlugin extends ActorLogging { self: Actor =>
-  val settings = Settings(context.system.settings.config)
+  val settings: Settings = Settings(context.system.settings.config)
 
   val connection: EsConnection = {
     val dispatcher = config.getString("plugin-dispatcher")

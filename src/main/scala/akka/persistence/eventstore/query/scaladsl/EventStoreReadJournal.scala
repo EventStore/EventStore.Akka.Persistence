@@ -1,5 +1,6 @@
 package akka.persistence.eventstore.query.scaladsl
 
+import scala.util.control.NonFatal
 import akka.NotUsed
 import akka.actor.ExtendedActorSystem
 import akka.event.Logging
@@ -10,9 +11,8 @@ import akka.persistence.query._
 import akka.persistence.query.scaladsl._
 import akka.stream.scaladsl.Source
 import com.typesafe.config.Config
-import eventstore.{ EventNumber, EventStoreExtension, EventStream }
-
-import scala.util.control.NonFatal
+import eventstore.akka.EventStoreExtension
+import eventstore.core.{ EventNumber, EventStream }
 
 class EventStoreReadJournal(system: ExtendedActorSystem, config: Config)
     extends ReadJournal

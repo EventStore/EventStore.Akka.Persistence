@@ -2,16 +2,14 @@ package akka.persistence.eventstore
 
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
-
+import scala.reflect.ClassTag
 import akka.actor.ExtendedActorSystem
 import akka.persistence.eventstore.snapshot.EventStoreSnapshotStore.SnapshotEvent
 import akka.persistence.eventstore.snapshot.EventStoreSnapshotStore.SnapshotEvent.Snapshot
 import akka.persistence.{ PersistentRepr, SnapshotMetadata }
-import akka.util.ByteString
-import eventstore.{ Content, ContentType, Event, EventData }
+import eventstore.core.util.uuid.randomUuid
+import eventstore.{ Content, ByteString, ContentType, Event, EventData}
 import spray.json._
-
-import scala.reflect.ClassTag
 
 class SprayJsonSerializer(val system: ExtendedActorSystem) extends EventStoreSerializer {
   import SprayJsonSerializer._
@@ -41,11 +39,13 @@ class SprayJsonSerializer(val system: ExtendedActorSystem) extends EventStoreSer
   def toEvent(x: AnyRef) = x match {
     case x: PersistentRepr => EventData(
       eventType = classFor(x).getName,
+      eventId = randomUuid,
       data = Content(ByteString(toBinary(x)), ContentType.Json)
     )
 
     case x: SnapshotEvent => EventData(
       eventType = classFor(x).getName,
+      eventId = randomUuid,
       data = Content(ByteString(toBinary(x)), ContentType.Json)
     )
 
@@ -60,7 +60,7 @@ class SprayJsonSerializer(val system: ExtendedActorSystem) extends EventStoreSer
   }
 
   def classFor(x: AnyRef) = x match {
-    case x: PersistentRepr => classOf[PersistentRepr]
+    case _: PersistentRepr => classOf[PersistentRepr]
     case _                 => x.getClass
   }
 }

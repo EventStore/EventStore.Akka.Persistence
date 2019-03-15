@@ -1,7 +1,7 @@
 package akka.persistence.eventstore
 
 import eventstore._
-
+import eventstore.akka.EsConnection
 import scala.annotation.tailrec
 import scala.concurrent.{ ExecutionContext, Future }
 
