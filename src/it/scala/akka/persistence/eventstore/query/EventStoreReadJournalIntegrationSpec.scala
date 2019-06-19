@@ -29,7 +29,7 @@ class EventStoreReadJournalIntegrationSpec extends ActorSpec with Matchers {
       expectNoMessage(100.millis) // Give ES some time to write to $streams
 
       val src = queries.persistenceIds().filter { x => persistenceIds contains x }
-      val probe = src.runWith(TestSink.probe[String])
+      src.runWith(TestSink.probe[String])
         .request(persistenceIds.size.toLong)
         .expectNextUnorderedN(persistenceIds)
     }
@@ -59,7 +59,7 @@ class EventStoreReadJournalIntegrationSpec extends ActorSpec with Matchers {
     "find existing events" in new Scope {
       val envelopes = write(10) take 5
       val src = queries.eventsByPersistenceId(persistenceId, 0, Long.MaxValue)
-      val probe = src.runWith(TestSink.probe[EventEnvelope])
+      src.runWith(TestSink.probe[EventEnvelope])
         .request(5)
         .expectNextN(envelopes)
     }
@@ -67,7 +67,7 @@ class EventStoreReadJournalIntegrationSpec extends ActorSpec with Matchers {
     "find new events" in new Scope {
       val src = queries.eventsByPersistenceId(persistenceId, 0, Long.MaxValue)
       val envelopes = write(10) take 5
-      val probe = src.runWith(TestSink.probe[EventEnvelope])
+      src.runWith(TestSink.probe[EventEnvelope])
         .request(5)
         .expectNextN(envelopes)
     }
@@ -75,7 +75,7 @@ class EventStoreReadJournalIntegrationSpec extends ActorSpec with Matchers {
     "find existing events in defined range" in new Scope {
       val envelopes = write(10).slice(1, 3)
       val src = queries.eventsByPersistenceId(persistenceId, 1, 3)
-      val probe = src.runWith(TestSink.probe[EventEnvelope])
+      src.runWith(TestSink.probe[EventEnvelope])
         .request(3)
         .expectNextN(envelopes)
     }
@@ -83,7 +83,7 @@ class EventStoreReadJournalIntegrationSpec extends ActorSpec with Matchers {
     "find new events in defined range" in new Scope {
       val src = queries.eventsByPersistenceId(persistenceId, 1, 3)
       val envelopes = write(10).slice(1, 3)
-      val probe = src.runWith(TestSink.probe[EventEnvelope])
+      src.runWith(TestSink.probe[EventEnvelope])
         .request(3)
         .expectNextN(envelopes)
     }
@@ -94,7 +94,7 @@ class EventStoreReadJournalIntegrationSpec extends ActorSpec with Matchers {
     "find events" in new Scope {
       val envelopes = write(5)
       val src = queries.currentEventsByPersistenceId(persistenceId, 0, Long.MaxValue)
-      val probe = src.runWith(TestSink.probe[EventEnvelope])
+      src.runWith(TestSink.probe[EventEnvelope])
         .request(5)
         .expectNextN(envelopes)
         .expectComplete()
@@ -110,7 +110,7 @@ class EventStoreReadJournalIntegrationSpec extends ActorSpec with Matchers {
     "find events in defined range" in new Scope {
       val envelopes = write(5).slice(1, 3)
       val src = queries.currentEventsByPersistenceId(persistenceId, 1, 3)
-      val probe = src.runWith(TestSink.probe[EventEnvelope])
+      src.runWith(TestSink.probe[EventEnvelope])
         .request(3)
         .expectNextN(envelopes)
         .expectComplete()
@@ -151,11 +151,11 @@ class EventStoreReadJournalIntegrationSpec extends ActorSpec with Matchers {
 
     class TestActor(val persistenceId: String) extends PersistentActor {
 
-      val receiveRecover: Receive = { case evt: String ⇒ }
+      val receiveRecover: Receive = { case _: String => }
 
       val receiveCommand: Receive = {
-        case cmd: String ⇒
-          persist(cmd) { evt ⇒
+        case cmd: String =>
+          persist(cmd) { evt =>
             sender() ! evt + "-done"
           }
       }

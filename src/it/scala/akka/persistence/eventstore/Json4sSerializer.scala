@@ -7,8 +7,8 @@ import akka.actor.{ ActorRef, ExtendedActorSystem }
 import akka.persistence.eventstore.snapshot.EventStoreSnapshotStore.SnapshotEvent
 import akka.persistence.eventstore.snapshot.EventStoreSnapshotStore.SnapshotEvent.Snapshot
 import akka.persistence.{ PersistentRepr, SnapshotMetadata }
-import akka.util.ByteString
-import eventstore.{ Content, ContentType, Event, EventData }
+import eventstore.core.util.uuid.randomUuid
+import eventstore.{Content, ByteString, ContentType, Event, EventData}
 import org.json4s.Extraction.decompose
 import org.json4s._
 import org.json4s.native.Serialization.{ read, write }
@@ -35,11 +35,13 @@ class Json4sSerializer(val system: ExtendedActorSystem) extends EventStoreSerial
   def toEvent(x: AnyRef) = x match {
     case x: PersistentRepr => EventData(
       eventType = classFor(x).getName,
+      eventId = randomUuid,
       data = Content(ByteString(toBinary(x)), ContentType.Json)
     )
 
     case x: SnapshotEvent => EventData(
       eventType = classFor(x).getName,
+      eventId = randomUuid,
       data = Content(ByteString(toBinary(x)), ContentType.Json)
     )
 
@@ -54,7 +56,7 @@ class Json4sSerializer(val system: ExtendedActorSystem) extends EventStoreSerial
   }
 
   def classFor(x: AnyRef) = x match {
-    case x: PersistentRepr => classOf[PersistentRepr]
+    case _: PersistentRepr => classOf[PersistentRepr]
     case _                 => x.getClass
   }
 

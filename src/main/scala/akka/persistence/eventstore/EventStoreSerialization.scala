@@ -1,10 +1,10 @@
 package akka.persistence.eventstore
 
+import scala.reflect.ClassTag
 import akka.actor.ActorSystem
 import akka.serialization.{ Serialization, SerializationExtension }
-import eventstore.{ Content, Event, EventData }
-
-import scala.reflect.ClassTag
+import eventstore.core.util.uuid.randomUuid
+import eventstore.{ Content, Event, EventData}
 
 case class EventStoreSerialization(serialization: Serialization) {
   def deserialize[T](event: Event)(implicit tag: ClassTag[T]): T = {
@@ -22,6 +22,7 @@ case class EventStoreSerialization(serialization: Serialization) {
       case ser: EventStoreSerializer => ser.toEvent(data)
       case _ => EventData(
         eventType = (eventType getOrElse data).getClass.getName,
+        eventId = randomUuid,
         data = Content(ser.toBinary(data))
       )
     }

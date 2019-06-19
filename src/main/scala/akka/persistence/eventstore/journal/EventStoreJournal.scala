@@ -1,27 +1,28 @@
 package akka.persistence.eventstore.journal
 
-import akka.persistence.eventstore.EventStorePlugin
-import akka.persistence.eventstore.Helpers._
-import akka.persistence.journal.AsyncWriteJournal
-import akka.persistence.{ AtomicWrite, PersistentRepr }
-import akka.stream.scaladsl.Source
-import eventstore.{ ReadStreamEvents, _ }
-import spray.json._
-
 import scala.annotation.tailrec
 import scala.collection.immutable.Seq
 import scala.concurrent.Future
+import akka.persistence.eventstore.EventStorePlugin
+import akka.persistence.eventstore.Helpers._
+import akka.persistence.journal.AsyncWriteJournal
+import akka.persistence.{AtomicWrite, PersistentRepr}
+import com.typesafe.config.Config
+import spray.json._
+import eventstore.core.util.uuid.randomUuid
+import eventstore.{ReadStreamEvents, _}
+
 
 class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
   import EventStoreJournal._
   import context.dispatcher
 
-  def config = context.system.settings.config.getConfig("eventstore.persistence.journal")
+  def config: Config = context.system.settings.config.getConfig("eventstore.persistence.journal")
 
-  protected lazy val writeBatchSize = config.getInt("write-batch-size")
-  protected lazy val readBatchSize = config.getInt("read-batch-size")
+  protected lazy val writeBatchSize: Int = config.getInt("write-batch-size")
+  protected lazy val readBatchSize: Int = config.getInt("read-batch-size")
 
-  def asyncWriteMessages(messages: Seq[AtomicWrite]) = {
+  def asyncWriteMessages(messages: Seq[AtomicWrite]): Future[Nil.type] = {
 
     if (messages.isEmpty) Future successful Nil
     else Future {
@@ -47,7 +48,7 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
 
       @tailrec def loop(
         future:  Future[Nil.type],
-        batches: Traversable[Seq[EventData]],
+        batches: List[Seq[EventData]],
         seqNr:   Long
       ): Future[Nil.type] = {
 
@@ -55,7 +56,7 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
         else {
           val events = batches.head
           val result = for {
-            future <- future
+                 _ <- future
             result <- writeEvents(events, seqNr)
           } yield result
           loop(result, batches.tail, seqNr + events.size)
@@ -65,17 +66,17 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
       if (events.size <= writeBatchSize) {
         writeEvents(events, seqNr)
       } else {
-        val batches = events grouped writeBatchSize
-        loop(Future successful Nil, batches.toTraversable, seqNr)
+        val batches = events.grouped(writeBatchSize).toList
+        loop(Future successful Nil, batches, seqNr)
       }
     } flatMap { identity }
   }
 
-  def asyncDeleteMessagesTo(persistenceId: PersistenceId, to: SequenceNr) = {
+  def asyncDeleteMessagesTo(persistenceId: PersistenceId, to: SequenceNr): Future[Unit] = {
 
-    def delete(to: SequenceNr) = asyncUnit {
+    def delete(to: SequenceNr): Future[Unit] = asyncUnit {
       val json = JsObject(TruncateBefore -> JsNumber(to))
-      val eventData = EventData.StreamMetadata(Content.Json(json.toString))
+      val eventData = EventData.StreamMetadata(Content.Json(json.toString), randomUuid)
       val streamId = eventStream(persistenceId).metadata
       val req = WriteEvents(streamId, List(eventData))
       connection(req)
@@ -83,12 +84,12 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
 
     if (to != Long.MaxValue) delete(to)
     else for {
-      to <- asyncReadHighestSequenceNr(persistenceId, 0)
+      to <- asyncReadHighestSequenceNr(persistenceId, 0L)
       _ <- delete(to)
     } yield ()
   }
 
-  def asyncReadHighestSequenceNr(persistenceId: PersistenceId, from: SequenceNr) = async {
+  def asyncReadHighestSequenceNr(persistenceId: PersistenceId, from: SequenceNr): Future[SequenceNr] = async {
     val stream = eventStream(persistenceId)
     val req = ReadEvent(stream, EventNumber.Last)
     connection(req) map {
@@ -121,9 +122,9 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
     from:          SequenceNr,
     to:            SequenceNr,
     max:           Long
-  )(recoveryCallback: (PersistentRepr) => Unit) = {
+  )(recoveryCallback: PersistentRepr => Unit): Future[Unit] = {
 
-    def replayMany(from: Option[EventNumber.Exact], to: EventNumber.Exact) = Future {
+    def replayMany(from: Option[EventNumber.Exact], to: EventNumber.Exact): Future[Unit] = Future {
       val streamId = eventStream(persistenceId)
       connection.streamSource(streamId, from, infinite = false, readBatchSize = readBatchSize)
         .takeWhile { event => event.number <= to }
@@ -132,7 +133,7 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
         .map { _ => () }
     } flatMap { identity }
 
-    def replayFew(maxCount: Long) = {
+    def replayFew(maxCount: Long): Future[Unit] = {
       val streamId = eventStream(persistenceId)
       val readStreamEvents = ReadStreamEvents(
         streamId,
@@ -160,7 +161,7 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
 
   def eventStream(x: PersistenceId): EventStream.Id = EventStream(prefix + x) match {
     case id: EventStream.Id => id
-    case other              => sys.error(s"Cannot create EventStream.Id for $x")
+    case _                  => sys.error(s"Cannot create EventStream.Id for $x")
   }
 }
 
