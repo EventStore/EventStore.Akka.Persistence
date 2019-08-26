@@ -5,7 +5,7 @@ language: scala
 
 scala:
   - 2.13.0
-  - 2.12.8
+  - 2.12.9
 
 sudo: required
 
@@ -21,8 +21,8 @@ jobs:
       scala: 2.13.0
       env: AKKA_TEST_TIMEFACTOR=2.0 AKKA_TEST_LOGLEVEL=OFF
       before_install:
-        - docker pull eventstore/eventstore:release-5.0.1
-        - docker run -d --rm --name eventstore-node -it -p 2113:2113 -p 1113:1113 -e EVENTSTORE_MEM_DB=True -e EVENTSTORE_STATS_PERIOD_SEC=1200 -e EVENTSTORE_START_STANDARD_PROJECTIONS=True eventstore/eventstore:release-5.0.1
+        - docker pull eventstore/eventstore:release-5.0.2
+        - docker run -d --rm --name eventstore-node -it -p 2113:2113 -p 1113:1113 -e EVENTSTORE_MEM_DB=True -e EVENTSTORE_STATS_PERIOD_SEC=1200 -e EVENTSTORE_START_STANDARD_PROJECTIONS=True eventstore/eventstore:release-5.0.2
       script:
         - sbt test:compile
         - travis_retry sbt it:test
