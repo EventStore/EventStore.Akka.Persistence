@@ -4,7 +4,7 @@
 This change log is ordered chronologically, so each release contains all changes described below
 it. Changes start from v6.0.0 and only relevant or interesting changes are mentioned. 
 
-## v7.0.2 (2019-08-22)
+## v7.0.1 (2019-08-22)
 
 ### Dependencies
 
