@@ -31,7 +31,7 @@ To configure EventStore.JVM client, see it's [reference.conf](https://github.com
 ### JSON serialization
 
 Akka serializes your messages into binary data by default.
-However you can [add your own serializer](http://doc.akka.io/docs/akka/2.5.21/scala/serialization.html#Customization) to serialize as JSON,
+However you can [add your own serializer](https://doc.akka.io/docs/akka/current/serialization.html#Customization) to serialize as JSON,
 But make sure you extend `akka.persistence.eventstore.EventStoreSerializer` rather then `akka.serialization.Serializer`. 
 And in case you are really going to serialize as json, please specify `ContentType.Json`, it will allow you to use projections.
  
@@ -51,7 +51,7 @@ Please check out some real examples used in tests:
 
 #### Sbt
 ```scala
-libraryDependencies += "com.geteventstore" %% "akka-persistence-eventstore" % "7.0.2"
+libraryDependencies += "com.geteventstore" %% "akka-persistence-eventstore" % "7.0.1"
 ```
 
 #### Maven
@@ -59,6 +59,6 @@ libraryDependencies += "com.geteventstore" %% "akka-persistence-eventstore" % "7
 <dependency>
     <groupId>com.geteventstore</groupId>
     <artifactId>akka-persistence-eventstore_${scala.version}</artifactId>
-    <version>7.0.2</version>
+    <version>7.0.1</version>
 </dependency>
 ```
