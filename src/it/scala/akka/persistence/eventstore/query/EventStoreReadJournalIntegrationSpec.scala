@@ -7,12 +7,10 @@ import akka.persistence.PersistentActor
 import akka.persistence.eventstore.ActorSpec
 import akka.persistence.eventstore.query.scaladsl.EventStoreReadJournal
 import akka.persistence.query.{EventEnvelope, PersistenceQuery, Sequence}
-import akka.stream.ActorMaterializer
 import akka.stream.testkit.scaladsl.TestSink
 import org.scalatest.Matchers
 
 class EventStoreReadJournalIntegrationSpec extends ActorSpec with Matchers {
-  implicit val materializer = ActorMaterializer()
 
   def queries = PersistenceQuery(system).
     readJournalFor[EventStoreReadJournal](EventStoreReadJournal.Identifier)

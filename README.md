@@ -5,15 +5,15 @@
 <table border="0">
   <tr>
     <td><a href="http://www.scala-lang.org">Scala</a> </td>
-    <td>2.13.0 / 2.12.9</td>
+    <td>2.13.1 / 2.12.10</td>
   </tr>
   <tr>
     <td><a href="http://akka.io">Akka</a> </td>
-    <td>2.5.25</td>
+    <td>2.6.1</td>
   </tr>
   <tr>
     <td><a href="https://github.com/EventStore/EventStore.JVM">EventStore client</a> </td>
-    <td>7.0.2</td>
+    <td>7.1.0</td>
   </tr>
 </table>
 
@@ -51,7 +51,7 @@ Please check out some real examples used in tests:
 
 #### Sbt
 ```scala
-libraryDependencies += "com.geteventstore" %% "akka-persistence-eventstore" % "7.0.1"
+libraryDependencies += "com.geteventstore" %% "akka-persistence-eventstore" % "7.1.0"
 ```
 
 #### Maven

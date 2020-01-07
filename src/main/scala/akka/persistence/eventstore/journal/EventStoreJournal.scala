@@ -124,6 +124,8 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
     max:           Long
   )(recoveryCallback: PersistentRepr => Unit): Future[Unit] = {
 
+    import context.system
+
     def replayMany(from: Option[EventNumber.Exact], to: EventNumber.Exact): Future[Unit] = Future {
       val streamId = eventStream(persistenceId)
       connection.streamSource(streamId, from, infinite = false, readBatchSize = readBatchSize)
