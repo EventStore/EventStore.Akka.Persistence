@@ -1,7 +1,6 @@
 package akka.persistence.eventstore
 
-import akka.actor.{ Actor, ActorLogging }
-import akka.stream.ActorMaterializer
+import akka.actor.{Actor, ActorLogging}
 import com.typesafe.config.Config
 import eventstore.akka.Settings
 import eventstore.akka._
@@ -16,11 +15,11 @@ trait EventStorePlugin extends ActorLogging { self: Actor =>
     val dispatcher = config.getString("plugin-dispatcher")
     val props = ConnectionActor.props(settings).withDispatcher(dispatcher)
     val ref = context.actorOf(props, "eventstore")
+    import context.system
     new EsConnection(ref, context, settings)
   }
 
   val serialization = EventStoreSerialization(context.system)
-  implicit val materializer = ActorMaterializer()(context)
   val prefix: String = config.getString("stream-prefix")
   import context.dispatcher
 
