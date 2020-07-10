@@ -3,9 +3,10 @@ package akka.persistence.eventstore
 import akka.actor.ActorSystem
 import akka.testkit.{ ImplicitSender, TestKit }
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{ WordSpecLike, BeforeAndAfterAll }
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.wordspec.AnyWordSpecLike
 
-class ActorSpec extends WordSpecLike with BeforeAndAfterAll {
+class ActorSpec extends AnyWordSpecLike with BeforeAndAfterAll {
   implicit lazy val system: ActorSystem = ActorSystem(getClass.getSimpleName, config)
 
   def config = ConfigFactory.load()

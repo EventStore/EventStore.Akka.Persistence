@@ -8,7 +8,7 @@ import akka.persistence.eventstore.ActorSpec
 import akka.persistence.eventstore.query.scaladsl.EventStoreReadJournal
 import akka.persistence.query.{EventEnvelope, PersistenceQuery, Sequence}
 import akka.stream.testkit.scaladsl.TestSink
-import org.scalatest.Matchers
+import org.scalatest.matchers.should.Matchers
 
 class EventStoreReadJournalIntegrationSpec extends ActorSpec with Matchers {
 
@@ -136,7 +136,8 @@ class EventStoreReadJournalIntegrationSpec extends ActorSpec with Matchers {
           offset = Sequence(seqNr.toLong),
           persistenceId = persistenceId,
           sequenceNr = seqNr.toLong,
-          event = event
+          event = event,
+          timestamp = 0L // timestamp not included in equals
         )
       }
     }

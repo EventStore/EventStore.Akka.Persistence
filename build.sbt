@@ -4,7 +4,7 @@ organization := "com.geteventstore"
 
 scalaVersion := crossScalaVersions.value.last
 
-crossScalaVersions := Seq("2.12.10", "2.13.1")
+crossScalaVersions := Seq("2.12.12", "2.13.3")
 
 releaseCrossBuild := true
 
@@ -20,12 +20,12 @@ startYear := Some(2013)
 
 scalacOptions ++= Seq("-target:jvm-1.8")
 javacOptions  ++= Seq("-target", "8", "-source", "8")
-scalacOptions --= Seq("-Ywarn-unused:params", "-Wunused:params")
+scalacOptions --= Seq("-Ywarn-unused:params", "-Wunused:params", "-Wunused:explicits")
 Compile / doc / scalacOptions ++= Seq("-groups", "-implicits", "-no-link-warnings")
 
 ///
 
-val AkkaVersion = "2.6.1"
+val AkkaVersion = "2.6.8"
 
 lazy val IntegrationTest = config("it") extend Test
 
@@ -36,9 +36,9 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-testkit" % AkkaVersion % Test,
   "com.typesafe.akka" %% "akka-stream" % AkkaVersion,
   "com.typesafe.akka" %% "akka-stream-testkit" % AkkaVersion % Test,
-  "com.geteventstore" %% "eventstore-client" % "7.1.0",
-  "org.specs2" %% "specs2-core" % "4.8.3" % Test,
-  "org.json4s" %% "json4s-native" % "3.6.7" % Test,
+  "com.geteventstore" %% "eventstore-client" % "7.2.0",
+  "org.specs2" %% "specs2-core" % "4.10.0" % Test,
+  "org.json4s" %% "json4s-native" % "3.6.9" % Test,
   "io.spray" %% "spray-json" % "1.3.5"
 )
 
