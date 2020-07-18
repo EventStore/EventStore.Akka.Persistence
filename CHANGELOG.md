@@ -4,6 +4,16 @@
 This change log is ordered chronologically, so each release contains all changes described below
 it. Changes start from v6.0.0 and only relevant or interesting changes are mentioned. 
 
+## v7.2.0 (2020-07-10)
+
+### Dependencies
+
+- Upgrades
+  * eventstore-client: 7.1.0 -> 7.2.0
+  * akka-*: 2.6.1 -> 2.6.8
+  * json4s-native: 3.6.7 -> 3.6.9
+  * specs2-core: 4.8.3 -> 4.10.0
+
 ## v7.0.1 (2019-08-22)
 
 ### Dependencies

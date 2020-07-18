@@ -91,7 +91,8 @@ class EventStoreReadJournal(system: ExtendedActorSystem, config: Config)
             offset = Sequence(sequenceNr),
             persistenceId = persistenceId,
             sequenceNr = sequenceNr,
-            event = serialization.deserialize[PersistentRepr](x).payload
+            event = serialization.deserialize[PersistentRepr](x).payload,
+            x.created.map(_.toEpochSecond).getOrElse(0L)
           )
         }
     }
