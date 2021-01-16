@@ -38,7 +38,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-stream-testkit" % AkkaVersion % Test,
   "com.geteventstore" %% "eventstore-client" % "7.3.0",
   "org.specs2" %% "specs2-core" % "4.10.0" % Test,
-  "org.json4s" %% "json4s-native" % "3.6.9" % Test,
+  "org.json4s" %% "json4s-native" % "3.6.10" % Test,
   "io.spray" %% "spray-json" % "1.3.5"
 )
 
