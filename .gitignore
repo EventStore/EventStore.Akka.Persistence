@@ -5,11 +5,14 @@ target
 .idea/
 *.iml
 
-# Metals
-.metals/*
-.bloop/*
-project/.bloop/*
-project/metals.sbt
+# bloop/metals/vscode
+.bloop/
+.metals/
+.vscode/
+metals.sbt
+
+# bsp
+.bsp/*
 
 # Mac
 .DS_Store

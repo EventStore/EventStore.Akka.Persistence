@@ -4,7 +4,7 @@ jdk:
 language: scala
 
 scala:
-  - 2.13.3
+  - 2.13.4
   - 2.12.12
 
 sudo: required
@@ -18,21 +18,21 @@ script:
 jobs:
   include:
     - stage: integration-5x
-      scala: 2.13.3
+      scala: 2.13.4
       env: AKKA_TEST_TIMEFACTOR=2.0 AKKA_TEST_LOGLEVEL=OFF
       before_install:
-        - docker pull eventstore/eventstore:release-5.0.8
-        - docker run -d --rm --name eventstore-node -it -p 2113:2113 -p 1113:1113 -e EVENTSTORE_MEM_DB=True -e EVENTSTORE_STATS_PERIOD_SEC=1200 -e EVENTSTORE_START_STANDARD_PROJECTIONS=True eventstore/eventstore:release-5.0.8
+        - docker pull eventstore/eventstore:release-5.0.9
+        - docker run -d --rm --name eventstore-node -it -p 2113:2113 -p 1113:1113 -e EVENTSTORE_MEM_DB=True -e EVENTSTORE_WRITE_STATS_TO_DB=False -e EVENTSTORE_START_STANDARD_PROJECTIONS=True eventstore/eventstore:release-5.0.9
       script:
         - sbt test:compile
         - travis_retry sbt it:test
 
     - stage: integration-20.x
-      scala: 2.13.3
+      scala: 2.13.4
       env: AKKA_TEST_TIMEFACTOR=2.0 AKKA_TEST_LOGLEVEL=OFF
       before_install:
-        - docker pull quay.io/ahjohannessen/eventstore-20.6.0-bionic
-        - docker run -d --rm --name eventstore-node-20 -p 2113:2113 -p 1113:1113 -e EVENTSTORE_INSECURE=True -e EVENTSTORE_MEM_DB=True -e EVENTSTORE_ENABLE_EXTERNAL_TCP=True -e EVENTSTORE_START_STANDARD_PROJECTIONS=True -e EVENTSTORE_RUN_PROJECTIONS=System quay.io/ahjohannessen/eventstore-20.6.0-bionic
+        - docker pull quay.io/ahjohannessen/esdb:21.2.0
+        - docker run -d --rm --name eventstore-node-20 -p 2113:2113 -p 1113:1113 -e EVENTSTORE_INSECURE=True -e EVENTSTORE_MEM_DB=True -e EVENTSTORE_ENABLE_EXTERNAL_TCP=True -e EVENTSTORE_START_STANDARD_PROJECTIONS=True -e EVENTSTORE_RUN_PROJECTIONS=System quay.io/ahjohannessen/esdb:21.2.0
       script:
         - sbt test:compile
         - travis_retry sbt it:test

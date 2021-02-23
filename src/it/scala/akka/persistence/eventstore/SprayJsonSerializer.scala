@@ -70,9 +70,9 @@ object SprayJsonSerializer {
   val Identifier: Int = ByteBuffer.wrap("spray-json".getBytes(UTF8)).getInt
 
   class JsonProtocol(system: ExtendedActorSystem) extends DefaultJsonProtocol {
-    val SnapshotMetadataFormat = jsonFormat3(SnapshotMetadata.apply)
+
     val ClassFormat = Map(
-      entry(jsonFormat3(SnapshotMetadata.apply)),
+      entry(SnapshotMetadataFormat),
       entry(jsonFormat4(SnapshotEvent.DeleteCriteria.apply)),
       entry(jsonFormat2(SnapshotEvent.Delete.apply)),
       entry(SnapshotFormat),
@@ -83,6 +83,22 @@ object SprayJsonSerializer {
 
     def entry[T](format: JsonFormat[T])(implicit tag: ClassTag[T]): (Class[_], JsonFormat[AnyRef]) = {
       tag.runtimeClass -> format.asInstanceOf[JsonFormat[AnyRef]]
+    }
+
+    object SnapshotMetadataFormat extends JsonFormat[SnapshotMetadata] {
+
+      def read(json: JsValue): SnapshotMetadata =
+        json.asJsObject.getFields("persistenceId", "sequenceNr", "timestamp") match {
+          case Seq(JsString(pid), JsNumber(seqNr), JsNumber(ts)) => SnapshotMetadata(pid, seqNr.toLong, ts.toLong)
+          case _ => deserializationError("Valid SnapshotMetadata expected")
+        }
+
+      def write(sm: SnapshotMetadata): JsValue = JsObject(
+        "persistenceId" -> JsString(sm.persistenceId),
+        "sequenceNr" -> JsNumber(sm.sequenceNr),
+        "timestamp" -> JsNumber(sm.timestamp)
+      )
+
     }
 
     object SnapshotFormat extends JsonFormat[Snapshot] {
