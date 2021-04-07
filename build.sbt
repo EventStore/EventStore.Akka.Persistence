@@ -25,7 +25,7 @@ Compile / doc / scalacOptions ++= Seq("-groups", "-implicits", "-no-link-warning
 
 ///
 
-val AkkaVersion = "2.6.12"
+val AkkaVersion = "2.6.14"
 
 lazy val IntegrationTest = config("it") extend Test
 
