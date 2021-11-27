@@ -1,0 +1,23 @@
+version: '3.8'
+services:
+
+  legacy:
+    image: eventstore/eventstore:release-5.0.11
+    environment:
+      - EVENTSTORE_MEM_DB=True
+      - EVENTSTORE_WRITE_STATS_TO_DB=False
+      - EVENTSTORE_START_STANDARD_PROJECTIONS=True
+    ports:
+      - 2113:2113
+      - 1113:1113
+    networks:
+      legacy_network:
+        ipv4_address: 172.20.0.2
+
+networks:
+  legacy_network:
+    name: legacy-net
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16
