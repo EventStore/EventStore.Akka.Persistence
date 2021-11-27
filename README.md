@@ -1,19 +1,19 @@
-### Event Store Plugin for Akka Persistence [![Build Status](https://travis-ci.org/EventStore/EventStore.Akka.Persistence.svg?branch=master)](https://travis-ci.org/EventStore/EventStore.Akka.Persistence) [![Version](https://img.shields.io/maven-central/v/com.geteventstore/akka-persistence-eventstore_2.13.svg?label=version)](http://search.maven.org/#search%7Cga%7C1%7Cg%3Acom.geteventstore%20AND%20akka-persistence-eventstore)
+### Event Store Plugin for Akka Persistence [![Continuous Integration](https://github.com/EventStore/EventStore.Akka.Persistence/actions/workflows/ci.yml/badge.svg)](https://github.com/EventStore/EventStore.Akka.Persistence/actions/workflows/ci.yml) [![Version](https://img.shields.io/maven-central/v/com.geteventstore/akka-persistence-eventstore_2.13.svg?label=version)](http://search.maven.org/#search%7Cga%7C1%7Cg%3Acom.geteventstore%20AND%20akka-persistence-eventstore)
 
 [Akka Persistence](https://doc.akka.io/docs/akka/current/persistence.html) journal and snapshot-store backed by [EventStoreDB](https://eventstore.com).
 
 <table border="0">
   <tr>
     <td><a href="http://www.scala-lang.org">Scala</a> </td>
-    <td>2.13.4 / 2.12.13</td>
+    <td>2.13.7 / 2.12.15</td>
   </tr>
   <tr>
     <td><a href="http://akka.io">Akka</a> </td>
-    <td>2.6.12</td>
+    <td>2.6.17</td>
   </tr>
   <tr>
     <td><a href="https://github.com/EventStore/EventStore.JVM">EventStore client</a> </td>
-    <td>7.3.1</td>
+    <td>7.4.0</td>
   </tr>
 </table>
 
@@ -51,7 +51,7 @@ Please check out some real examples used in tests:
 
 #### Sbt
 ```scala
-libraryDependencies += "com.geteventstore" %% "akka-persistence-eventstore" % "7.2.2"
+libraryDependencies += "com.geteventstore" %% "akka-persistence-eventstore" % "7.2.3"
 ```
 
 #### Maven
@@ -59,6 +59,6 @@ libraryDependencies += "com.geteventstore" %% "akka-persistence-eventstore" % "7
 <dependency>
     <groupId>com.geteventstore</groupId>
     <artifactId>akka-persistence-eventstore_${scala.version}</artifactId>
-    <version>7.2.2</version>
+    <version>7.2.3</version>
 </dependency>
 ```
