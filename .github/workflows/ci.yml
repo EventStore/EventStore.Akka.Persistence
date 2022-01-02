@@ -17,7 +17,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        scala: [2.13.7, 2.12.15]
+        scala: [3.1.0, 2.13.7, 2.12.15]
         java: [adopt@1.8]
     runs-on: ${{ matrix.os }}
     steps:
@@ -31,7 +31,7 @@ jobs:
         with:
           timeout_minutes: 10
           max_attempts: 3
-          command: sbt ++${{ matrix.scala }} test:compile test
+          command: sbt ++${{ matrix.scala }} 'Test/compile; test'
 
   esdb:
     name: Integration Tests
@@ -39,7 +39,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        scala: [2.13.7]
+        scala: [3.1.0, 2.13.7, 2.12.15]
         java: [adopt@1.8]
     runs-on: ${{ matrix.os }}
     steps:
@@ -62,7 +62,7 @@ jobs:
         with:
           timeout_minutes: 10
           max_attempts: 3
-          command: sbt ++${{ matrix.scala }} it:test
+          command: sbt ++${{ matrix.scala }} 'It/test'
 
       - name: Stop ESDB
         if: always()
@@ -77,7 +77,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        scala: [2.13.7]
+        scala: [3.1.0, 2.13.7, 2.12.15]
         java: [adopt@1.8]
     runs-on: ${{ matrix.os }}
     steps:
@@ -100,7 +100,7 @@ jobs:
         with:
           timeout_minutes: 10
           max_attempts: 3
-          command: sbt ++${{ matrix.scala }} it:test
+          command: sbt ++${{ matrix.scala }} 'It/test'
 
       - name: Stop Legacy ESDB
         if: always()
