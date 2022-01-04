@@ -17,11 +17,11 @@ class SprayJsonSerializer(val system: ExtendedActorSystem) extends EventStoreSer
   val protocol = new JsonProtocol(system)
   import protocol._
 
-  def identifier = Identifier
+  def identifier: Int = Identifier
 
-  def includeManifest = true
+  def includeManifest: Boolean = true
 
-  def fromBinary(bytes: Array[Byte], manifest: Option[Class[_]]) = {
+  def fromBinary(bytes: Array[Byte], manifest: Option[Class[_]]): AnyRef = {
     def fromBinary(manifest: Class[_]) = {
       val json = new String(bytes, UTF8).parseJson
       val format = classFormat(manifest)
@@ -30,13 +30,13 @@ class SprayJsonSerializer(val system: ExtendedActorSystem) extends EventStoreSer
     fromBinary(manifest getOrElse sys.error("manifest is missing"))
   }
 
-  def toBinary(x: AnyRef) = {
+  def toBinary(x: AnyRef): Array[Byte] = {
     val json = classFormat(classFor(x)).write(x)
     val str = json.compactPrint
     str.getBytes(UTF8)
   }
 
-  def toEvent(x: AnyRef) = x match {
+  def toEvent(x: AnyRef): EventData = x match {
     case x: PersistentRepr => EventData(
       eventType = classFor(x).getName,
       eventId = randomUuid,
@@ -52,26 +52,27 @@ class SprayJsonSerializer(val system: ExtendedActorSystem) extends EventStoreSer
     case _ => sys.error(s"Cannot serialize $x, SnapshotEvent expected")
   }
 
-  def fromEvent(event: Event, manifest: Class[_]) = {
+  def fromEvent(event: Event, manifest: Class[_]): AnyRef = {
     val clazz = Class.forName(event.data.eventType)
     val result = fromBinary(event.data.data.value.toArray, clazz)
     if (manifest.isInstance(result)) result
     else sys.error(s"Cannot deserialize event as $manifest, event: $event")
   }
 
-  def classFor(x: AnyRef) = x match {
+  private def classFor(x: AnyRef) = x match {
     case _: PersistentRepr => classOf[PersistentRepr]
     case _                 => x.getClass
   }
 }
 
 object SprayJsonSerializer {
+  
   val UTF8: Charset = Charset.forName("UTF-8")
   val Identifier: Int = ByteBuffer.wrap("spray-json".getBytes(UTF8)).getInt
 
   class JsonProtocol(system: ExtendedActorSystem) extends DefaultJsonProtocol {
 
-    val ClassFormat = Map(
+    private val ClassFormat: Map[Class[_], JsonFormat[AnyRef]] = Map(
       entry(SnapshotMetadataFormat),
       entry(jsonFormat4(SnapshotEvent.DeleteCriteria.apply)),
       entry(jsonFormat2(SnapshotEvent.Delete.apply)),
@@ -79,9 +80,10 @@ object SprayJsonSerializer {
       entry(PersistenceReprFormat)
     )
 
-    def classFormat[T](x: Class[T]) = ClassFormat.getOrElse(x, sys.error(s"JsonFormat not found for $x"))
+    def classFormat[T](x: Class[T]): JsonFormat[AnyRef] = 
+      ClassFormat.getOrElse(x, sys.error(s"JsonFormat not found for $x"))
 
-    def entry[T](format: JsonFormat[T])(implicit tag: ClassTag[T]): (Class[_], JsonFormat[AnyRef]) = {
+    private def entry[T](format: JsonFormat[T])(implicit tag: ClassTag[T]): (Class[_], JsonFormat[AnyRef]) = {
       tag.runtimeClass -> format.asInstanceOf[JsonFormat[AnyRef]]
     }
 
@@ -102,12 +104,12 @@ object SprayJsonSerializer {
     }
 
     object SnapshotFormat extends JsonFormat[Snapshot] {
-      def read(json: JsValue) = json.asJsObject.getFields("data", "metadata") match {
+      def read(json: JsValue): Snapshot = json.asJsObject.getFields("data", "metadata") match {
         case Seq(JsString(data), metadata) => Snapshot(data, SnapshotMetadataFormat.read(metadata))
         case _                             => deserializationError("string expected")
       }
 
-      def write(x: Snapshot) = x.data match {
+      def write(x: Snapshot): JsValue = x.data match {
         case data: String => JsObject("data" -> JsString(data), "metadata" -> SnapshotMetadataFormat.write(x.metadata))
         case _            => serializationError("string expected")
       }
@@ -115,9 +117,9 @@ object SprayJsonSerializer {
 
     object PersistenceReprFormat extends JsonFormat[PersistentRepr] {
 
-      val format = jsonFormat5(Mapping.apply)
+      private val format = jsonFormat5(Mapping.apply)
 
-      def read(json: JsValue) = {
+      def read(json: JsValue): PersistentRepr = {
         val x = format.read(json)
         PersistentRepr(
           payload = x.payload,
@@ -128,7 +130,7 @@ object SprayJsonSerializer {
         )
       }
 
-      def write(x: PersistentRepr) = {
+      def write(x: PersistentRepr): JsValue = {
         val mapping = Mapping(
           payload = x.payload.asInstanceOf[String],
           sequenceNr = x.sequenceNr,

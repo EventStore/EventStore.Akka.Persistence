@@ -15,7 +15,6 @@ trait EventStorePlugin extends ActorLogging { self: Actor =>
     val dispatcher = config.getString("plugin-dispatcher")
     val props = ConnectionActor.props(settings).withDispatcher(dispatcher)
     val ref = context.actorOf(props, "eventstore")
-    import context.system
     new EsConnection(ref, context, settings)
   }
 

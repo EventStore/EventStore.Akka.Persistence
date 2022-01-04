@@ -8,7 +8,7 @@ import akka.persistence.eventstore.Helpers._
 import akka.persistence.journal.AsyncWriteJournal
 import akka.persistence.{AtomicWrite, PersistentRepr}
 import com.typesafe.config.Config
-import spray.json._
+import io.circe._
 import eventstore.core.util.uuid.randomUuid
 import eventstore.{ReadStreamEvents, _}
 
@@ -56,7 +56,7 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
         else {
           val events = batches.head
           val result = for {
-                 _ <- future
+            _ <- future
             result <- writeEvents(events, seqNr)
           } yield result
           loop(result, batches.tail, seqNr + events.size)
@@ -75,8 +75,8 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
   def asyncDeleteMessagesTo(persistenceId: PersistenceId, to: SequenceNr): Future[Unit] = {
 
     def delete(to: SequenceNr): Future[Unit] = asyncUnit {
-      val json = JsObject(TruncateBefore -> JsNumber(to))
-      val eventData = EventData.StreamMetadata(Content.Json(json.toString), randomUuid)
+      val json = Json.obj(TruncateBefore -> Json.fromLong(to))
+      val eventData = EventData.StreamMetadata(Content.Json(json.noSpaces), randomUuid)
       val streamId = eventStream(persistenceId).metadata
       val req = WriteEvents(streamId, List(eventData))
       connection(req)
@@ -97,20 +97,8 @@ class EventStoreJournal extends AsyncWriteJournal with EventStorePlugin {
     } recoverWith {
       case _: StreamNotFoundException => Future successful 0L
       case eventNotFound: EventNotFoundException =>
-        connection.getStreamMetadata(stream) map { metadata =>
-          val str = metadata.value.utf8String
-          val json = str.parseJson
-          json match {
-            case JsObject(fields) if fields.isDefinedAt(TruncateBefore) =>
-              fields(TruncateBefore) match {
-                case JsNumber(value) =>
-                  value.toLong
-                case other =>
-                  deserializationError(s"$persistenceId: expected '$TruncateBefore' as numeric value, got $other")
-              }
-            case _ =>
-              deserializationError(s"$persistenceId: expected metadata as json object containing field '$TruncateBefore', got $json")
-          }
+        connection.getStreamMetadata(stream) map { md =>
+          parser.parse(md.value.utf8String).flatMap(_.hcursor.get[Long](TruncateBefore)).fold(throw _, identity)
         } recover {
           case e => throw e initCause eventNotFound
         }
