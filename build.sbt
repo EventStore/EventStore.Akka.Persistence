@@ -29,7 +29,7 @@ Compile / doc / scalacOptions ++= Seq("-groups", "-implicits", "-no-link-warning
 
 val ClientVersion = "8.0.1"
 val CirceVersion = "0.14.1"
-val AkkaVersion = "2.6.18"
+val AkkaVersion = "2.6.19"
 
 lazy val IntegrationTest = config("it") extend Test
 
