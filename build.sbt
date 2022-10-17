@@ -46,7 +46,7 @@ libraryDependencies ++= Seq(
    // akka-persistence-query relies on akka-remote via QuerySerializer, however it uses "provided".
   "com.typesafe.akka" %% "akka-remote" % AkkaVersion % Test,
   ("org.specs2" %% "specs2-core" % "4.13.1").cross(CrossVersion.for3Use2_13) % Test,
-  "org.json4s" %% "json4s-native" % "4.0.3" % Test,
+  "org.json4s" %% "json4s-native" % "4.0.6" % Test,
   "io.spray" %% "spray-json" % "1.3.6" % Test
 )
 
