@@ -6,7 +6,7 @@ organization := "com.geteventstore"
 
 scalaVersion := crossScalaVersions.value.last
 
-crossScalaVersions := Seq("2.12.15", "2.13.7", "3.1.0")
+crossScalaVersions := Seq("2.12.15", "2.13.12", "3.1.0")
 
 releaseCrossBuild := true
 
