@@ -19,7 +19,7 @@ script:
 jobs:
   include:
     - stage: integration-5x
-      scala: 2.13.7
+      scala: 2.13.13
       env: AKKA_TEST_TIMEFACTOR=2.0 AKKA_TEST_LOGLEVEL=OFF
       before_install:
         - docker pull eventstore/eventstore:release-5.0.11
@@ -29,7 +29,7 @@ jobs:
         - travis_retry sbt it:test
 
     - stage: integration-21.x
-      scala: 2.13.7
+      scala: 2.13.13
       env: AKKA_TEST_TIMEFACTOR=2.0 AKKA_TEST_LOGLEVEL=OFF
       before_install:
         - docker pull eventstore/eventstore:21.10.0-bionic
