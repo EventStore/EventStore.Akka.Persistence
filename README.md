@@ -1,3 +1,9 @@
+> [!WARNING]
+> **DEPRECATION NOTICE**: 
+> * EventStoreDB version 23.10.x is the last OSS version to support the tcp protocol based client.
+> * This project is no longer maintained. 
+> We recommend moving to [EventStoreDB-Client-Java](https://github.com/EventStore/EventStoreDB-Client-Java) for ongoing updates and support.
+
 ### Event Store Plugin for Akka Persistence [![Continuous Integration](https://github.com/EventStore/EventStore.Akka.Persistence/actions/workflows/ci.yml/badge.svg)](https://github.com/EventStore/EventStore.Akka.Persistence/actions/workflows/ci.yml) [![Version](https://img.shields.io/maven-central/v/com.geteventstore/akka-persistence-eventstore_2.13.svg?label=version)](http://search.maven.org/#search%7Cga%7C1%7Cg%3Acom.geteventstore%20AND%20akka-persistence-eventstore)
 
 [Akka Persistence](https://doc.akka.io/docs/akka/current/persistence.html) journal and snapshot-store backed by [EventStoreDB](https://eventstore.com).
